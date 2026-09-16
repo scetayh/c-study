@@ -1,0 +1,12 @@
+## if the two usage show the same interval, the test is passed
+## DO NOT forget to adjust the TAB_WID in the C source
+# using tabs
+1	n
+12	n
+123	n
+1234	n
+# using blanks
+1       n
+12      n
+123     n
+1234    n
