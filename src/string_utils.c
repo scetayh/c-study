@@ -341,7 +341,7 @@ ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
             col = 0;
             tab_offset = 0;
         } else {
-            whitepsace_run = 0;
+            whitespace_run = 0;
             whitespace_span = 0;
 
             col++;
@@ -350,7 +350,7 @@ ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
 
         expanded_len++;
         
-        
+
     }
 
     // size_t expanded_len = 0;
