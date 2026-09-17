@@ -99,7 +99,7 @@ ssize_t str_reverse(const char src[], size_t src_buf_size, char dst[],
 ssize_t str_detab(const char src[], size_t src_buf_size, char dst[],
                   size_t dst_buf_size, int tab_width) {
     CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
-    CHECK_TAB_PARAMS(tab_width);
+    CHECK_POSITIVE_PARAMS(tab_width);
 
     const size_t src_len = strnlen(src, src_buf_size);
 
@@ -168,7 +168,7 @@ ssize_t str_detab(const char src[], size_t src_buf_size, char dst[],
 ssize_t str_entab(const char src[], size_t src_buf_size, char dst[],
                   size_t dst_buf_size, int tab_width) {
     CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
-    CHECK_TAB_PARAMS(tab_width);
+    CHECK_POSITIVE_PARAMS(tab_width);
 
     const size_t src_len = strnlen(src, src_buf_size);
 
@@ -296,119 +296,96 @@ ssize_t str_collapse_blank(const char src[], size_t src_buf_size, char dst[],
     return (ssize_t)collapsed_len;
 }
 
-ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
-                 size_t dst_buf_size, int tab_width, size_t col_limit) {
-    CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
-    CHECK_TAB_PARAMS(tab_width);
+// ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
+//                  size_t dst_buf_size, int tab_width, size_t col_lim) {
+//     CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
+//     CHECK_POSITIVE_PARAMS(tab_width);
+//     if (tab_width > col_lim) {
+//         errno = EINVAL;
+//         return -1;
+//     }
 
-    const size_t src_len = strnlen(src, src_buf_size);
+//     const size_t src_len = strnlen(src, src_buf_size);
 
-    size_t expanded_len = 0; 
+//     size_t expanded_len = 0;
 
-    unsigned int col = 0;
-    unsigned int tab_offset = 0;
+//     unsigned int col = 0;
+//     unsigned int tab_offset = 0;
 
-    size_t whitespace_i;
-    size_t whitespace_col;
-    unsigned int whitespace_run = 0;
-    unsigned int whitespace_span = 0;
+//     size_t whitespace_i = 0;
+//     unsigned int whitespace_run = 0;
 
-    for (size_t i = 0; i < src_len; i++) {
-        if (src[i] == ' ') {
-            if (whitespace_run == 0) {
-                whitespace_i = i;
-                whitespace_col = col;
-            }
-            whitespace_run++;
-            whitespace_span++;
+//     bool is_wrapping = false;
 
-            col++;
-            tab_offset = advance_tab_offset(tab_offset, tab_width);
-        } else if (src[i] == '\t') {
-            if (whitespace_run == 0) {
-                whitespace_i = i;
-                whitespace_col = col;
-            }
-            whitespace_run++;
-            whitespace_span += tab_width - tab_offset;
+//     for (size_t i = 0; i < src_len; i++) {
+//         if (src[i] == ' ') {
+//             if (!is_wrapping) {
+//                 if (!whitespace_run) whitespace_i = i;
+//                 whitespace_run++;
 
-            col += tab_width - tab_offset;
-            tab_offset = 0;
-        } else if (src[i] == '\n') {
-            whitespace_run = 0;
-            whitespace_span = 0;
+//                 col++;
+//                 tab_offset = advance_tab_offset(tab_offset, tab_width);
 
-            col = 0;
-            tab_offset = 0;
-        } else {
-            whitespace_run = 0;
-            whitespace_span = 0;
+//                 expanded_len++;
+//             }
+//         } else if (src[i] == '\t') {
+//             if (!is_wrapping) {
+//                 if (!whitespace_run) whitespace_i = i;
+//                 whitespace_run++;
 
-            col++;
-            tab_offset = advance_tab_offset(tab_offset, tab_width);
-        }
+//                 col += tab_width - tab_offset;
+//                 tab_offset = 0;
 
-        expanded_len++;
-        
+//                 expanded_len++;
+//             }
+//         } else if (src[i] == '\n') {
+//             whitespace_run = col = tab_offset = 0;
+//             if (!is_wrapping) expanded_len++;
 
-    }
+//             is_wrapping = false;
+//         } else {
+//             is_wrapping = 0;
 
-    // size_t expanded_len = 0;
-    // unsigned int col = 0;
-    // unsigned int tab_offset = 0;
-    // ssize_t whitespace_start_i = -1; // 为 -1 时当前行不存在空白符，截断单词
-    // unsigned int whitespace_run = 0;
-    // bool is_wrapping = false; // 非折行即原有 '\n' 之后的空白符不应被丢弃
-    // for (size_t i = 0; i < src_len; i++) {
-    //     if (src[i] == ' ' && !is_wrapping) {
-    //         if (whitespace_run == 0) {
-    //             whitespace_start_i = i;
-    //         }
-    //         whitespace_run++;
-    //         tab_offset = advance_tab_offset(tab_offset, tab_width);
-    //         col++;
-    //         expanded_len++;
-    //     } else if (src[i] == '\t' && !is_wrapping) {
-    //         if (whitespace_run == 0) {
-    //             whitespace_start_i = i;
-    //         }
-    //         whitespace_run++;
-    //         col += tab_width - tab_offset;
-    //         tab_offset = 0;
-    //         expanded_len++;
-    //     } else if (src[i] == '\n') {
-    //         is_wrapping = false;
-    //         whitespace_start_i = -1;
-    //         whitespace_run = 0;
-    //         tab_offset = 0;
-    //         col = 0;
-    //         expanded_len++;
-    //     } else {
-    //         is_wrapping = false;
-    //         whitespace_run = 0;
-    //         tab_offset = advance_tab_offset(tab_offset, tab_width);
-    //         col++;
-    //         expanded_len++;
-    //     }
+//             col++;
+//             tab_offset = advance_tab_offset(tab_offset, tab_width);
 
-    //     if (col >= col_limit) { // 折行
-    //         if (whitespace_run > 0) {
-    //             expanded_len -= whitespace_run;
-    //         } else {
-    //             if (whitespace_start_i > -1) {
-    //                 expanded_len -= i - whitespace_start_i + 1;
-    //                 i = whitespace_start_i - 1; // 移动光标
-    //             } // else 折断单词，无事可做
-    //         }
-    //         expanded_len++; // 折行用 '\n'
+//             expanded_len++;
+//         }
 
-    //         is_wrapping = true; // 折行之后的空白符应在下面几轮循环中被丢弃
-    //         whitespace_run = 0;
-    //         whitespace_start_i = -1;
-    //         tab_offset = 0;
-    //         col = 0;
-    //     } // else 不折行，无事可做
-    // }
+//         if (col >= col_lim) {
+//             expanded_len -= whitespace_run;
+//             if (i + 1 < src_len) expanded_len++;
 
-    // // 第一轮循环结束
-}
+//             if (whitespace_run > 0) {
+//                 col = 0;
+//                 tab_offset = 0;
+//                 for (size_t j = whitespace_i + whitespace_run; j <= i; j++) {
+//                     if (src[j] == '\t') {
+//                         col += tab_width - tab_offset;
+//                         tab_offset = 0;
+//                     } else {
+//                         col++;
+//                         tab_offset = advance_tab_offset(tab_offset, tab_width);
+//                     }
+//                 }
+//             } else {
+//                 col = 0;
+//                 tab_offset = 0;
+//             }
+
+//             whitespace_run = 0;
+//             is_wrapping = true;
+//         }
+//     }
+
+//     expanded_len -= whitespace_run;
+
+//     if (expanded_len > (size_t)SSIZE_MAX) {
+//         errno = EFBIG;
+//         return -1;
+//     }
+
+//     if (dst == NULL || dst_buf_size == 0) {
+//         return (ssize_t)expanded_len;
+//     }
+// }

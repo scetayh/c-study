@@ -2,7 +2,7 @@
  * @file string_utils.h
  * @brief 安全字符串操作函数库（复制、反转、制表符展开/压缩等）
  * @author scetayh
- * @date 2026-09-16
+ * @date 2026-09-17
  *
  * 所有函数均遵循 "snprintf 契约"：
  *
@@ -22,10 +22,10 @@
 #include <bits/posix1_lim.h>
 #include <errno.h>
 #include <limits.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
-#include <stdbool.h>
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -73,7 +73,7 @@
         }                                                                      \
     } while (0)
 
-#define CHECK_TAB_PARAMS(tab_width)                                            \
+#define CHECK_POSITIVE_PARAMS(tab_width)                                       \
     do {                                                                       \
         if ((tab_width) <= 0) {                                                \
             errno = EINVAL;                                                    \
@@ -236,8 +236,8 @@ ssize_t str_reverse(const char src[], size_t src_buf_size, char dst[],
  * - 截断时，dst 依然保证以 '\0' 结尾，且不产生缓冲区溢出。
  *
  * - 制表符展开后的总长度一定 >= 源长度（仅当 tab_width >= 2 时通常如此）。
- * 
-* - 该函数支持“仅计算长度”模式：传入 dst = NULL, dst_buf_size = 0
+ *
+ * - 该函数支持“仅计算长度”模式：传入 dst = NULL, dst_buf_size = 0
  *   时，函数不进行写入和重叠检测，直接返回所需长度，可用于调用者预先分配缓冲区。
  *
  * @warning 若 dst 非空，则 dst_buf_size 必须至少为 1，否则无法存放结尾的
@@ -298,7 +298,7 @@ ssize_t str_detab(const char src[], size_t src_buf_size, char dst[],
  * - 制表符和换行符会重置列偏移为 0，从而影响后续空格的压缩决策。
  *
  * - 压缩后的总长度总是 ≤ src_len（仅当 tab_width >= 2 时通常如此）。
- * 
+ *
  * - 该函数支持“仅计算长度”模式：传入 dst = NULL, dst_buf_size = 0
  *   时，函数不进行写入和重叠检测，直接返回所需长度，可用于调用者预先分配缓冲区。
  *
