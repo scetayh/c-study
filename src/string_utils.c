@@ -296,96 +296,27 @@ ssize_t str_collapse_blank(const char src[], size_t src_buf_size, char dst[],
     return (ssize_t)collapsed_len;
 }
 
-// ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
-//                  size_t dst_buf_size, int tab_width, size_t col_lim) {
-//     CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
-//     CHECK_POSITIVE_PARAMS(tab_width);
-//     if (tab_width > col_lim) {
-//         errno = EINVAL;
-//         return -1;
-//     }
+ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
+                 size_t dst_buf_size, int tab_width, size_t col_lim) {
+    CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
+    CHECK_POSITIVE_PARAMS(tab_width);
+    if (tab_width > col_lim) {
+        errno = EINVAL;
+        return -1;
+    }
 
-//     const size_t src_len = strnlen(src, src_buf_size);
+    const size_t src_len = strnlen(src, src_buf_size);
 
-//     size_t expanded_len = 0;
+    size_t expanded_len = 0;
 
-//     unsigned int col = 0;
-//     unsigned int tab_offset = 0;
+    
 
-//     size_t whitespace_i = 0;
-//     unsigned int whitespace_run = 0;
+    if (expanded_len > (size_t)SSIZE_MAX) {
+        errno = EFBIG;
+        return -1;
+    }
 
-//     bool is_wrapping = false;
-
-//     for (size_t i = 0; i < src_len; i++) {
-//         if (src[i] == ' ') {
-//             if (!is_wrapping) {
-//                 if (!whitespace_run) whitespace_i = i;
-//                 whitespace_run++;
-
-//                 col++;
-//                 tab_offset = advance_tab_offset(tab_offset, tab_width);
-
-//                 expanded_len++;
-//             }
-//         } else if (src[i] == '\t') {
-//             if (!is_wrapping) {
-//                 if (!whitespace_run) whitespace_i = i;
-//                 whitespace_run++;
-
-//                 col += tab_width - tab_offset;
-//                 tab_offset = 0;
-
-//                 expanded_len++;
-//             }
-//         } else if (src[i] == '\n') {
-//             whitespace_run = col = tab_offset = 0;
-//             if (!is_wrapping) expanded_len++;
-
-//             is_wrapping = false;
-//         } else {
-//             is_wrapping = 0;
-
-//             col++;
-//             tab_offset = advance_tab_offset(tab_offset, tab_width);
-
-//             expanded_len++;
-//         }
-
-//         if (col >= col_lim) {
-//             expanded_len -= whitespace_run;
-//             if (i + 1 < src_len) expanded_len++;
-
-//             if (whitespace_run > 0) {
-//                 col = 0;
-//                 tab_offset = 0;
-//                 for (size_t j = whitespace_i + whitespace_run; j <= i; j++) {
-//                     if (src[j] == '\t') {
-//                         col += tab_width - tab_offset;
-//                         tab_offset = 0;
-//                     } else {
-//                         col++;
-//                         tab_offset = advance_tab_offset(tab_offset, tab_width);
-//                     }
-//                 }
-//             } else {
-//                 col = 0;
-//                 tab_offset = 0;
-//             }
-
-//             whitespace_run = 0;
-//             is_wrapping = true;
-//         }
-//     }
-
-//     expanded_len -= whitespace_run;
-
-//     if (expanded_len > (size_t)SSIZE_MAX) {
-//         errno = EFBIG;
-//         return -1;
-//     }
-
-//     if (dst == NULL || dst_buf_size == 0) {
-//         return (ssize_t)expanded_len;
-//     }
-// }
+    if (dst == NULL || dst_buf_size == 0) {
+        return (ssize_t)expanded_len;
+    }
+}

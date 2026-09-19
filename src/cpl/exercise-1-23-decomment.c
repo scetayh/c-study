@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 int main() {
-    int c;
+    int ch;
 
     /**
      * stat    left      right (c)  next stat
@@ -40,32 +40,32 @@ int main() {
      */
     unsigned int stat = 0;
 
-    while ((c = getchar()) != EOF) {
+    while ((ch = getchar()) != EOF) {
         switch (stat) {
             case 0:
-            switch (c) {
+            switch (ch) {
                 case '/':
                 stat = 1;
                 break;
                 
                 case '\'':
                 stat = 5;
-                putchar(c);
+                putchar(ch);
                 break;
 
                 case '\"':
                 stat = 6;
-                putchar(c);
+                putchar(ch);
                 break;
 
                 default:
-                putchar(c);
+                putchar(ch);
                 break;
             }
             break;
 
             case 1:
-            switch (c) {
+            switch (ch) {
                 case '/':
                 stat = 2;
                 break;
@@ -76,35 +76,35 @@ int main() {
 
                 case '\'':
                 stat = 5;
-                putchar(c);
+                putchar(ch);
                 break;
 
                 case '\"':
                 stat = 6;
-                putchar(c);
+                putchar(ch);
                 break;
 
                 default:
                 stat = 0;
                 putchar('/');
-                putchar(c);
+                putchar(ch);
                 break;
             }
             break;
 
             case 2:
-            if (c == '\n') {
+            if (ch == '\n') {
                 stat = 0;
-                putchar(c);
+                putchar(ch);
             }
             break;
 
             case 3:
-            if (c == '*') stat = 4;
+            if (ch == '*') stat = 4;
             break;
 
             case 4:
-            switch (c) {
+            switch (ch) {
                 case '/':
                 stat = 0;
                 break;
@@ -119,7 +119,7 @@ int main() {
             break;
 
             case 5:
-            switch (c) {
+            switch (ch) {
                 case  '\'':
                 stat = 0;
                 break;
@@ -128,11 +128,11 @@ int main() {
                 stat = 7;
                 break;
             }
-            putchar(c);
+            putchar(ch);
             break;
 
             case 6:
-            switch (c) {
+            switch (ch) {
                 case '\"':
                 stat = 0;
                 break;
@@ -141,17 +141,17 @@ int main() {
                 stat = 8;
                 break;
             }
-            putchar(c);
+            putchar(ch);
             break;
 
             case 7:
             stat = 5;
-            putchar(c);
+            putchar(ch);
             break;
 
             case 8:
             stat = 6;
-            putchar(c);
+            putchar(ch);
             break;
         }
     }
