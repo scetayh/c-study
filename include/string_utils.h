@@ -373,7 +373,7 @@ ssize_t str_collapse_blank(const char src[], size_t src_buf_size, char dst[],
                            size_t dst_buf_size);
 
 ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
-                 size_t dst_buf_size, int tab_width, size_t col_limit);
+                 size_t dst_buf_size, int tab_width, int col_limit);
 
 #ifdef __cplusplus
 }

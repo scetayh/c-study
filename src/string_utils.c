@@ -297,9 +297,10 @@ ssize_t str_collapse_blank(const char src[], size_t src_buf_size, char dst[],
 }
 
 ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
-                 size_t dst_buf_size, int tab_width, size_t col_lim) {
+                 size_t dst_buf_size, int tab_width, int col_lim) {
     CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
     CHECK_POSITIVE_PARAMS(tab_width);
+    CHECK_POSITIVE_PARAMS(col_lim);
     if (tab_width > col_lim) {
         errno = EINVAL;
         return -1;
@@ -322,7 +323,7 @@ ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
             // 如果不在折行
             if (col != -1) {
                 // 如果当前行暂无空白符，或当前空白符与之前的空白符不紧邻
-                if (whitespace_start_i == -1 || i > whitespace_end_i + 1) {
+                if (whitespace_start_i == -1 || i > (size_t)whitespace_end_i + 1) {
                     // 最近空白符串从此开始
                     whitespace_start_i = i;
                 }
