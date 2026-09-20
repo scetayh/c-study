@@ -73,12 +73,20 @@
         }                                                                      \
     } while (0)
 
-#define CHECK_POSITIVE_PARAMS(tab_width)                                       \
+#define CHECK_POSITIVE_PARAM(param)                                            \
     do {                                                                       \
-        if ((tab_width) <= 0) {                                                \
+        if ((param) <= 0) {                                                    \
             errno = EINVAL;                                                    \
             return -1;                                                         \
         }                                                                      \
+    } while (0)
+
+#define WRITE_DST(ch)                                                          \
+    do {                                                                       \
+        if (dst_buf_size > 0 && dst_i < dst_buf_size - 1) {                    \
+            dst[dst_i] = ch;                                                   \
+        }                                                                      \
+        dst_i++;                                                               \
     } while (0)
 
 #ifdef __cplusplus
@@ -372,6 +380,68 @@ ssize_t str_entab(const char src[], size_t src_buf_size, char dst[],
 ssize_t str_collapse_blank(const char src[], size_t src_buf_size, char dst[],
                            size_t dst_buf_size);
 
+/**
+ * @brief 将源字符串按指定列宽智能折行，输出到目标缓冲区。
+ *
+ * 该函数扫描源字符串 src，将其按 col_lim 列宽限制折行，尽量在空白处断行，
+ * 以保证每行长度不超过 col_lim。
+ * 
+ * 折行策略：
+ * 
+ * - 每行从第 0 列开始计数，制表符按 tab_width 展开计算视觉宽度。
+ * 
+ * - 当列数达到 col_lim 时，若当前行存在空白符串，则在最近一段连续空白的
+ *   起始处折行，并丢弃该空白串（用换行符替代）。
+ * 
+ * - 若当前行没有空白符（即超长单词），则在当前字符处强制断行，单词被拆分。
+ * 
+ * - 源字符串中已有的换行符（'\n'）会保留，并重置列计数。
+ *
+ * @param src           源字符数组（不必以 '\0' 结尾，受 src_buf_size 限制）
+ * @param src_buf_size  源缓冲区的物理大小（字节数）
+ * @param dst           目标缓冲区。若为 NULL，则必须同时设置 dst_buf_size = 0，
+ *                      此时函数仅计算所需长度，不进行写入
+ * @param dst_buf_size  目标缓冲区的物理大小（字节数）。若 dst 非空，则必须 > 0；
+ *                      若 dst 为 NULL，则必须为 0
+ * @param tab_width     制表符宽度（列数），必须 > 0，且必须 ≤ col_lim
+ * @param col_lim       每行最大列数，必须 > 0，且必须 ≥ tab_width
+ *
+ * @return 成功时返回折行后所需的总长度（不含结尾的 '\0'）：
+ * 
+ *         - 若 dst == NULL 且 dst_buf_size == 0，仅计算长度并返回，不写入。
+ * 
+ *         - 若 dst 非空且返回值 < dst_buf_size，表示完整折行并写入。
+ * 
+ *         - 若 dst 非空且返回值 >= dst_buf_size，表示发生截断，dst 中仅存放
+ *           前 (dst_buf_size - 1) 个字符（折行逻辑可能不完整，但保证安全）。
+ * 
+ *         若参数无效（src 为 NULL，或 dst 非空但 dst_buf_size == 0，
+ *         或 tab_width <= 0，或 col_lim <= 0，或 tab_width > col_lim），
+ *         返回 -1 并设置 errno = EINVAL。
+ * 
+ *         若折行后所需长度超过 SSIZE_MAX，返回 -1 并设置 errno = EFBIG。
+ *
+ * @note
+ * - 该函数采用两遍扫描：第一遍计算折行后的总长度，第二遍实际写入。
+ * 
+ * - 折行后长度可能大于、等于或小于源长度：插入换行符会增加长度，丢弃空白会
+ *   减少长度，因此最终长度取决于具体内容。
+ * 
+ * - 换行符（'\n'）不会被折叠或删除，它会重置列计数并保留在输出中。
+ * 
+ * - 该函数**不支持** src 与 dst 重叠：若两者指向同一缓冲区或部分重叠，
+ *   行为未定义。调用者必须保证两者不重叠。
+ * 
+ * - 若目标缓冲区不足以容纳完整折行结果，函数会截断写入（通过 WRITE_DST 宏
+ *   保护），但返回值仍为完整所需长度，调用者可据此重新分配缓冲区。
+ *
+ * @warning dst_buf_size 应至少为返回值 + 1，以确保完整写入。若过小，输出可能
+ *          被截断，但不会发生缓冲区溢出。
+ * 
+ * @warning src 和 dst 不得重叠，否则行为未定义。
+ * 
+ * @warning tab_width 必须 ≤ col_lim，否则无法将制表符放入任何一行。
+ */
 ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
                  size_t dst_buf_size, int tab_width, int col_limit);
 

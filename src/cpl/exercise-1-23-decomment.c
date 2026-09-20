@@ -4,6 +4,7 @@ int main() {
     int ch;
 
     /**
+     * '$' = '/' + '*'
      * stat    left      right (c)  next stat
      * 0       foo       /          1
      *                   '          5
@@ -19,10 +20,10 @@ int main() {
      * 2       //foo     \n         0
      *                   other      2
      *
-     * 3       /*foo     *          4
+     * 3       $foo      *          4
      *                   other      3
      *
-     * 4       /*foo*    /          0
+     * 4       $foo*     /          0
      *                   *          4
      *                   other      3
      *

@@ -12,7 +12,7 @@ int main() {
     str_read(src, sizeof(src));
     str_wrap(src, sizeof(src), dst, sizeof(dst), TABLEN, COLLIM);
 
-    printf("%s\n", dst);
+    printf("%s", dst);
 
     return 0;
 }

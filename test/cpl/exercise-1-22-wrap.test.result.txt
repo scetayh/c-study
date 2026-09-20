@@ -2,63 +2,83 @@ CONDIT
 col  6
 tab  4
 COLLUM
-|    ||    ||    ||    |
-012345012345012345012345
+|
+||
+||
+||
+|
+012345
+012345
+012345
+012345
 T ES T
 ===1==
-aaaa  aaaaaa
+aaaa
+aaaaaa
 ===2==
-aaaaaa  aaaa
+aaaaaa
+aaaa
 ===3==
-aaaa  aaaaaa  aaaaaaa
+aaaa
+aaaaaa
+aaaaaa
+a
 ===4==
-aa    
-aa    
+aa
+aa
 aa
 ===5==
 aaaaaa
 
 aaaaaa
 ===6==
-a aaaaaa
+a
+aaaaaa
 
-a aaaaaa
+a
+aaaaaa
 ===7==
 
- 
-  
-   
-    
-     
-      
-     
-    
-   
-  
- 
+
+
+
+
+
+
+
+
+
+
+
 
 ===8==
 
-	
-		
-			
-		
-	
+
+
+
+
+
 
 ===9==
 a	aa
-a		a
+a
+a
 	a
 		a
 ==10==
 a	 a
-a         a
-a               a
-a                   a
-a                       a
-a                       a
+a
+a
+a
+a
+a
+a
+a
+a
+a
+a
 ==11==
-  
+
 EXPECT
 ===1==
 aaaa
