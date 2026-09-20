@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include "string_utils.h"
 
-#define MAXLEN 1000
+#define MAXLEN 32768
 #define TABLEN 4
-#define COLLIM 6
+#define COLLIM 80
 
 int main() {
     char src[MAXLEN];
