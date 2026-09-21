@@ -14,7 +14,7 @@ static inline size_t entab_compressed_len(unsigned int start_offset,
     return total_cols / tab_width + total_cols % tab_width;
 }
 
-static inline void entab_write_compressed(char dst[], size_t *dst_i,
+static inline void entab_write_compressed(char *dst, size_t *dst_i,
                                           size_t max_write,
                                           unsigned int start_offset,
                                           size_t space_run, int tab_width) {
@@ -30,31 +30,30 @@ static inline void entab_write_compressed(char dst[], size_t *dst_i,
     }
 }
 
-ssize_t str_read(char dst[], size_t dst_buf_size) {
-    CHECK_READ_PARAMS(dst, dst_buf_size);
+ssize_t str_read(char *dst, size_t dst_buf_size) {
+    CHECK_DST_REQUIRED(dst, dst_buf_size);
 
-    int ch;
     size_t dst_len = 0;
 
+    int ch;
     while (dst_len < dst_buf_size - 1 && (ch = getchar()) != EOF) {
         dst[dst_len++] = (char)ch;
     }
     dst[dst_len] = '\0';
+
     while ((ch = getchar()) != EOF) {
         dst_len++;
     }
 
-    if (dst_len > (size_t)SSIZE_MAX) {
-        errno = EFBIG;
-        return -1;
-    }
+    CHECK_LEN_OVERFLOW(dst_len);
 
     return (ssize_t)dst_len;
 }
 
-ssize_t str_copy(const char src[], size_t src_buf_size, char dst[],
+ssize_t str_copy(const char *src, size_t src_buf_size, char *dst,
                  size_t dst_buf_size) {
-    CHECK_PRESERVE_PARAMS(src, dst, dst_buf_size);
+    CHECK_SRC_NOT_NULL(src);
+    CHECK_DST_REQUIRED(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
     const size_t dst_len = MIN(src_len, dst_buf_size - 1);
@@ -64,24 +63,20 @@ ssize_t str_copy(const char src[], size_t src_buf_size, char dst[],
     }
     dst[dst_len] = '\0';
 
-    if (src_len > (size_t)SSIZE_MAX) {
-        errno = EFBIG;
-        return -1;
-    }
+    CHECK_LEN_OVERFLOW(dst_len);
+
     return (ssize_t)src_len;
 }
 
-ssize_t str_reverse(const char src[], size_t src_buf_size, char dst[],
+ssize_t str_reverse(const char *src, size_t src_buf_size, char *dst,
                     size_t dst_buf_size) {
-    CHECK_PRESERVE_PARAMS(src, dst, dst_buf_size);
+    CHECK_SRC_NOT_NULL(src);
+    CHECK_DST_REQUIRED(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
     const size_t dst_len = MIN(src_len, dst_buf_size - 1);
 
-    if (src_len > 0 && dst >= src && dst < src + src_len) {
-        errno = EINVAL;
-        return -1;
-    }
+    CHECK_REVERSE_OVERLAP(src, src_len, dst);
 
     for (size_t i = 0; i < dst_len; i++) {
         dst[i] = src[src_len - i - 1];
@@ -89,55 +84,37 @@ ssize_t str_reverse(const char src[], size_t src_buf_size, char dst[],
 
     dst[dst_len] = '\0';
 
-    if (src_len > (size_t)SSIZE_MAX) {
-        errno = EFBIG;
-        return -1;
-    }
+    CHECK_LEN_OVERFLOW(src_len);
+
     return (ssize_t)src_len;
 }
 
-ssize_t str_detab(const char src[], size_t src_buf_size, char dst[],
+ssize_t str_detab(const char *src, size_t src_buf_size, char *dst,
                   size_t dst_buf_size, int tab_width) {
-    CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
-    CHECK_POSITIVE_PARAM(tab_width);
+    CHECK_SRC_NOT_NULL(src);
+    CHECK_DST_OPTIONAL(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
 
-    size_t expanded_len = 0;
+    size_t result_len = 0;
+
     unsigned int tab_offset = 0;
     for (size_t i = 0; i < src_len; i++) {
         if (src[i] == '\t') {
-            expanded_len += tab_width - tab_offset;
+            result_len += tab_width - tab_offset;
             tab_offset = 0;
         } else {
-            expanded_len++;
-            if (src[i] == '\n') {
-                tab_offset = 0;
-            } else {
-                tab_offset = advance_tab_offset(tab_offset, tab_width);
-            }
+            result_len++;
+            tab_offset =
+                src[i] == '\n' ? 0 : advance_tab_offset(tab_offset, tab_width);
         }
     }
 
-    if (expanded_len > (size_t)SSIZE_MAX) {
-        errno = EFBIG;
-        return -1;
-    }
+    CHECK_LEN_OVERFLOW(result_len);
 
-    if (dst == NULL || dst_buf_size == 0) {
-        return (ssize_t)expanded_len;
-    }
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, result_len);
 
-    if (src_len > 0) {
-        if (dst >= src && dst < src + src_len) {
-            errno = EINVAL;
-            return -1;
-        }
-        if (dst < src && dst + expanded_len > src) {
-            errno = EINVAL;
-            return -1;
-        }
-    }
+    CHECK_NO_OVERLAP(src, src_len, dst, result_len);
 
     size_t dst_i = 0;
     tab_offset = 0;
@@ -153,26 +130,25 @@ ssize_t str_detab(const char src[], size_t src_buf_size, char dst[],
             if (dst_i < dst_buf_size - 1) {
                 WRITE_DST(src[i]);
             }
-            if (src[i] == '\n') {
-                tab_offset = 0;
-            } else {
-                tab_offset = advance_tab_offset(tab_offset, tab_width);
-            }
+            tab_offset =
+                src[i] == '\n' ? 0 : advance_tab_offset(tab_offset, tab_width);
         }
     }
     dst[dst_i] = '\0';
 
-    return (ssize_t)expanded_len;
+    return (ssize_t)result_len;
 }
 
-ssize_t str_entab(const char src[], size_t src_buf_size, char dst[],
+ssize_t str_entab(const char *src, size_t src_buf_size, char *dst,
                   size_t dst_buf_size, int tab_width) {
-    CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
-    CHECK_POSITIVE_PARAM(tab_width);
+    CHECK_SRC_NOT_NULL(src);
+    CHECK_DST_OPTIONAL(dst, dst_buf_size);
+    CHECK_POSITIVE_PARAMS(tab_width);
 
     const size_t src_len = strnlen(src, src_buf_size);
 
-    size_t compressed_len = 0;
+    size_t result_len = 0;
+
     unsigned int tab_offset = 0;
     unsigned int space_run = 0;
     size_t start_offset = 0;
@@ -186,33 +162,24 @@ ssize_t str_entab(const char src[], size_t src_buf_size, char dst[],
         } else {
             // 先处理之前的连续 ' ' 串（如果有）
             if (space_run > 0) {
-                compressed_len +=
+                result_len +=
                     entab_compressed_len(start_offset, space_run, tab_width);
                 space_run = 0;
             }
 
             // 再处理当前的字符 src[i]
-            compressed_len++;
-            if (src[i] == '\t' || src[i] == '\n') {
-                tab_offset = 0;
-            } else {
-                tab_offset = advance_tab_offset(tab_offset, tab_width);
-            }
+            tab_offset = (src[i] == '\t' || src[i] == '\n')
+                             ? 0
+                             : advance_tab_offset(tab_offset, tab_width);
         }
     }
-    if (space_run > 0) {
-        compressed_len +=
-            entab_compressed_len(start_offset, space_run, tab_width);
-    }
+    result_len += space_run > 0
+                      ? entab_compressed_len(start_offset, space_run, tab_width)
+                      : 0;
 
-    if (compressed_len > (size_t)SSIZE_MAX) {
-        errno = EFBIG;
-        return -1;
-    }
+    CHECK_LEN_OVERFLOW(result_len);
 
-    if (dst == NULL || dst_buf_size == 0) {
-        return (ssize_t)compressed_len;
-    }
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, result_len);
 
     size_t dst_i = 0;
     tab_offset = 0;
@@ -233,11 +200,9 @@ ssize_t str_entab(const char src[], size_t src_buf_size, char dst[],
             }
 
             WRITE_DST(src[i]);
-            if (src[i] == '\t' || src[i] == '\n') {
-                tab_offset = 0;
-            } else {
-                tab_offset = advance_tab_offset(tab_offset, tab_width);
-            }
+            tab_offset = (src[i] == '\t' || src[i] == '\n')
+                             ? 0
+                             : advance_tab_offset(tab_offset, tab_width);
         }
     }
     if (space_run > 0) {
@@ -246,37 +211,34 @@ ssize_t str_entab(const char src[], size_t src_buf_size, char dst[],
     }
     dst[dst_i] = '\0';
 
-    return (ssize_t)compressed_len;
+    return (ssize_t)result_len;
 }
 
-ssize_t str_collapse_blank(const char src[], size_t src_buf_size, char dst[],
+ssize_t str_collapse_blank(const char *src, size_t src_buf_size, char *dst,
                            size_t dst_buf_size) {
-    CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
+    CHECK_SRC_NOT_NULL(src);
+    CHECK_DST_OPTIONAL(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
 
-    size_t collapsed_len = 0;
+    size_t result_len = 0;
+
     unsigned int blank_run = 0;
     for (size_t i = 0; i < src_len; i++) {
         if (src[i] == ' ' || src[i] == '\t') {
             if (blank_run == 0) {
-                collapsed_len++;
+                result_len++;
             }
             blank_run++;
         } else {
             blank_run = 0;
-            collapsed_len++;
+            result_len++;
         }
     }
 
-    if (collapsed_len > (size_t)SSIZE_MAX) {
-        errno = EFBIG;
-        return -1;
-    }
+    CHECK_LEN_OVERFLOW(result_len);
 
-    if (dst == NULL || dst_buf_size == 0) {
-        return (ssize_t)collapsed_len;
-    }
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, result_len);
 
     size_t dst_i = 0;
     blank_run = 0;
@@ -293,23 +255,19 @@ ssize_t str_collapse_blank(const char src[], size_t src_buf_size, char dst[],
     }
     dst[dst_i] = '\0';
 
-    return (ssize_t)collapsed_len;
+    return (ssize_t)result_len;
 }
 
-ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
+ssize_t str_wrap(const char *src, size_t src_buf_size, char *dst,
                  size_t dst_buf_size, int tab_width, int col_lim) {
-    CHECK_RESIZE_PARAMS(src, dst, dst_buf_size);
-    CHECK_POSITIVE_PARAM(tab_width);
-    CHECK_POSITIVE_PARAM(col_lim);
-    if (tab_width > col_lim) {
-        errno = EINVAL;
-        return -1;
-    }
+    CHECK_SRC_NOT_NULL(src);
+    CHECK_DST_OPTIONAL(dst, dst_buf_size);
+    CHECK_POSITIVE_PARAMS(tab_width, col_lim);
+    CHECK_TAB_WIDTH_LE_COL_LIM(tab_width, col_lim);
 
     const size_t src_len = strnlen(src, src_buf_size);
 
     ssize_t delta = 0;
-
     int col = 0; // == -1 时正在折行
     size_t line_start_i = 0;
     ssize_t whitespace_start_i = -1;  // == -1 时当前行暂无空白符
@@ -337,7 +295,6 @@ ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
                 delta--;
             }
             break;
-
         case '\n':
             if (col != -1) { // 如果不在折行但遇到了换行符
                 if (whitespace_end_i == (ssize_t)i - 1) {
@@ -354,7 +311,6 @@ ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
             col = 0;
             line_start_i = i + 1;
             break;
-
         // 如果当前为普通字符
         default:
             // 如果不在折行，那么栏数自增；如果正在折行，那么结束折行，栏数变为
@@ -395,21 +351,15 @@ ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
                 -1;
         }
     }
+    delta -= col != -1 && whitespace_end_i == (ssize_t)src_len - 1
+                 ? whitespace_end_i - whitespace_start_i + 1
+                 : 0;
 
-    if (col != -1 && whitespace_end_i == (ssize_t)src_len - 1) {
-        delta -= whitespace_end_i - whitespace_start_i + 1;
-    }
+    size_t result_len = src_len + delta;
 
-    size_t expanded_len = src_len + delta;
+    CHECK_LEN_OVERFLOW(result_len);
 
-    if (expanded_len > (size_t)SSIZE_MAX) {
-        errno = EFBIG;
-        return -1;
-    }
-
-    if (dst == NULL || dst_buf_size == 0) {
-        return (ssize_t)expanded_len;
-    }
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, result_len);
 
     size_t dst_i = 0;
     col = 0;
@@ -438,7 +388,6 @@ ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
                     src[i] == ' ' ? 1 : tab_width - col % tab_width;
             } // 如果正在折行，那么丢弃折行后新行首的空白符，即不作写入处理
             break;
-
         case '\n':
             if (col != -1) { // 如果不在折行但遇到了换行符
                 if (whitespace_end_i == (ssize_t)i - 1) {
@@ -454,7 +403,6 @@ ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
             col = 0;
             line_start_i = i + 1;
             break;
-
         // 如果当前为普通字符
         default:
             // 写入 dst
@@ -501,12 +449,67 @@ ssize_t str_wrap(const char src[], size_t src_buf_size, char dst[],
                 -1;
         }
     }
+    dst_i -= col != -1 && whitespace_end_i == (ssize_t)src_len - 1
+                 ? src_len - whitespace_start_i
+                 : 0;
+    dst[MIN(dst_i, dst_buf_size - 1)] = '\0';
 
-    if (col != -1 && whitespace_end_i == (ssize_t)src_len - 1) {
-        dst_i -= src_len - whitespace_start_i;
+    return (ssize_t)result_len;
+}
+
+signed char str_hdtoi(char ch) {
+    if (ch >= '0' && ch <= '9') {
+        return ch - '0';
+    } else if (ch >= 'A' && ch <= 'F') {
+        return ch - 'A' + 10;
+    } else if (ch >= 'a' && ch <= 'f') {
+        return ch - 'a' + 10;
+    } else {
+        errno = EINVAL;
+        return -1;
+    }
+}
+
+long long str_htoi(const char *src, size_t src_buf_size) {
+    CHECK_DST_REQUIRED(src, src_buf_size);
+
+    const size_t src_len = strnlen(src, src_buf_size);
+
+    if (src_len == 0) {
+        errno = EINVAL;
+        return -1;
     }
 
-    dst[dst_i < dst_buf_size ? dst_i : dst_buf_size - 1] = '\0';
+    size_t i = src_len >= 2 && src[0] == '0' && (src[1] == 'x' || src[1] == 'X')
+                   ? 2
+                   : 0;
 
-    return (ssize_t)expanded_len;
+    if (i == src_len) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    long long lld = 0;
+
+    signed char digit;
+    for (; i < src_len; i++) {
+        digit = str_hdtoi(src[i]);
+        if (digit == -1) {
+            return -1;
+        }
+
+        if (lld > (LLONG_MAX - digit) / 16) {
+            errno = ERANGE;
+            return -1;
+        }
+
+        lld = lld * 16 + digit;
+    }
+
+    return lld;
+}
+
+ssize_t str_squeeze(const char *src, size_t src_buf_size, char *dst,
+                    size_t dst_buf_size, char ch) {
+    
 }
