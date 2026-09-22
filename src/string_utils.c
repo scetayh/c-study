@@ -52,7 +52,7 @@ ssize_t str_read(char *dst, size_t dst_buf_size) {
 
 ssize_t str_copy(const char *src, size_t src_buf_size, char *dst,
                  size_t dst_buf_size) {
-    CHECK_SRC_NOT_NULL(src);
+    CHECK_NOT_NULL(src);
     CHECK_DST_REQUIRED(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
@@ -70,13 +70,13 @@ ssize_t str_copy(const char *src, size_t src_buf_size, char *dst,
 
 ssize_t str_reverse(const char *src, size_t src_buf_size, char *dst,
                     size_t dst_buf_size) {
-    CHECK_SRC_NOT_NULL(src);
+    CHECK_NOT_NULL(src);
     CHECK_DST_REQUIRED(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
     const size_t dst_len = MIN(src_len, dst_buf_size - 1);
 
-    CHECK_REVERSE_OVERLAP(src, src_len, dst);
+    CHECK_SELF_OVERLAP_ALLOWED(src, src_len, dst);
 
     for (size_t i = 0; i < dst_len; i++) {
         dst[i] = src[src_len - i - 1];
@@ -91,30 +91,30 @@ ssize_t str_reverse(const char *src, size_t src_buf_size, char *dst,
 
 ssize_t str_detab(const char *src, size_t src_buf_size, char *dst,
                   size_t dst_buf_size, int tab_width) {
-    CHECK_SRC_NOT_NULL(src);
+    CHECK_NOT_NULL(src);
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
 
-    size_t result_len = 0;
+    size_t compressed_len = 0;
 
     unsigned int tab_offset = 0;
     for (size_t i = 0; i < src_len; i++) {
         if (src[i] == '\t') {
-            result_len += tab_width - tab_offset;
+            compressed_len += tab_width - tab_offset;
             tab_offset = 0;
         } else {
-            result_len++;
+            compressed_len++;
             tab_offset =
                 src[i] == '\n' ? 0 : advance_tab_offset(tab_offset, tab_width);
         }
     }
 
-    CHECK_LEN_OVERFLOW(result_len);
+    CHECK_LEN_OVERFLOW(compressed_len);
 
-    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, result_len);
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, compressed_len);
 
-    CHECK_NO_OVERLAP(src, src_len, dst, result_len);
+    CHECK_NO_OVERLAP(src, src_len, dst, compressed_len);
 
     size_t dst_i = 0;
     tab_offset = 0;
@@ -136,18 +136,18 @@ ssize_t str_detab(const char *src, size_t src_buf_size, char *dst,
     }
     dst[dst_i] = '\0';
 
-    return (ssize_t)result_len;
+    return (ssize_t)compressed_len;
 }
 
 ssize_t str_entab(const char *src, size_t src_buf_size, char *dst,
                   size_t dst_buf_size, int tab_width) {
-    CHECK_SRC_NOT_NULL(src);
+    CHECK_NOT_NULL(src);
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
-    CHECK_POSITIVE_PARAMS(tab_width);
+    CHECK_INT_POSITIVE(tab_width);
 
     const size_t src_len = strnlen(src, src_buf_size);
 
-    size_t result_len = 0;
+    size_t expanded_len = 0;
 
     unsigned int tab_offset = 0;
     unsigned int space_run = 0;
@@ -162,7 +162,7 @@ ssize_t str_entab(const char *src, size_t src_buf_size, char *dst,
         } else {
             // 先处理之前的连续 ' ' 串（如果有）
             if (space_run > 0) {
-                result_len +=
+                expanded_len +=
                     entab_compressed_len(start_offset, space_run, tab_width);
                 space_run = 0;
             }
@@ -173,13 +173,15 @@ ssize_t str_entab(const char *src, size_t src_buf_size, char *dst,
                              : advance_tab_offset(tab_offset, tab_width);
         }
     }
-    result_len += space_run > 0
-                      ? entab_compressed_len(start_offset, space_run, tab_width)
+    expanded_len +=
+        space_run > 0 ? entab_compressed_len(start_offset, space_run, tab_width)
                       : 0;
 
-    CHECK_LEN_OVERFLOW(result_len);
+    CHECK_LEN_OVERFLOW(expanded_len);
 
-    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, result_len);
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, expanded_len);
+
+    CHECK_SELF_OVERLAP_ALLOWED(src, src_len, dst);
 
     size_t dst_i = 0;
     tab_offset = 0;
@@ -211,34 +213,36 @@ ssize_t str_entab(const char *src, size_t src_buf_size, char *dst,
     }
     dst[dst_i] = '\0';
 
-    return (ssize_t)result_len;
+    return (ssize_t)expanded_len;
 }
 
 ssize_t str_collapse_blank(const char *src, size_t src_buf_size, char *dst,
                            size_t dst_buf_size) {
-    CHECK_SRC_NOT_NULL(src);
+    CHECK_NOT_NULL(src);
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
 
-    size_t result_len = 0;
+    size_t compressed_len = 0;
 
     unsigned int blank_run = 0;
     for (size_t i = 0; i < src_len; i++) {
         if (src[i] == ' ' || src[i] == '\t') {
             if (blank_run == 0) {
-                result_len++;
+                compressed_len++;
             }
             blank_run++;
         } else {
             blank_run = 0;
-            result_len++;
+            compressed_len++;
         }
     }
 
-    CHECK_LEN_OVERFLOW(result_len);
+    CHECK_LEN_OVERFLOW(compressed_len);
 
-    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, result_len);
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, compressed_len);
+
+    CHECK_SELF_OVERLAP_ALLOWED(src, src_len, dst);
 
     size_t dst_i = 0;
     blank_run = 0;
@@ -255,14 +259,14 @@ ssize_t str_collapse_blank(const char *src, size_t src_buf_size, char *dst,
     }
     dst[dst_i] = '\0';
 
-    return (ssize_t)result_len;
+    return (ssize_t)compressed_len;
 }
 
 ssize_t str_wrap(const char *src, size_t src_buf_size, char *dst,
                  size_t dst_buf_size, int tab_width, int col_lim) {
-    CHECK_SRC_NOT_NULL(src);
+    CHECK_NOT_NULL(src);
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
-    CHECK_POSITIVE_PARAMS(tab_width, col_lim);
+    CHECK_INT_POSITIVE(tab_width, col_lim);
     CHECK_TAB_WIDTH_LE_COL_LIM(tab_width, col_lim);
 
     const size_t src_len = strnlen(src, src_buf_size);
@@ -509,7 +513,39 @@ long long str_htoi(const char *src, size_t src_buf_size) {
     return lld;
 }
 
-ssize_t str_squeeze(const char *src, size_t src_buf_size, char *dst,
-                    size_t dst_buf_size, char ch) {
-    
+ssize_t str_squeeze(const char *src, size_t src_buf_size, const char *set,
+                    size_t set_buf_size, char *dst, size_t dst_buf_size) {
+    CHECK_NOT_NULL(src, set);
+    CHECK_DST_OPTIONAL(dst, dst_buf_size);
+
+    const size_t src_len = strnlen(src, src_buf_size);
+    const size_t set_len = strnlen(set, set_buf_size);
+
+    size_t compressed_len = 0;
+
+    bool in_set[256] = {false};
+
+    for (size_t i = 0; i < set_len; i++) {
+        in_set[(unsigned char)set[i]] = true;
+    }
+
+    for (size_t i = 0; i < src_len; i++) {
+        compressed_len += !in_set[(unsigned char)src[i]] ? 1 : 0;
+    }
+
+    CHECK_LEN_OVERFLOW(compressed_len);
+
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, compressed_len);
+
+    CHECK_SELF_OVERLAP_ALLOWED(src, src_len, dst);
+
+    size_t dst_i = 0;
+    for (size_t i = 0; i < src_len && dst_i < dst_buf_size - 1; i++) {
+        if (!in_set[(unsigned char)src[i]]) {
+            dst[dst_i++] = src[i];
+        }
+    }
+    dst[dst_i] = '\0';
+
+    return (ssize_t)compressed_len;
 }

@@ -36,15 +36,18 @@
 #endif
 
 /**
- * @brief 确保源指针非空。
+ * @brief 一次性检查多个指针非空。
  *
  * 适用于所有需要读取源字符串的函数。
  */
-#define CHECK_SRC_NOT_NULL(src)                                                \
+#define CHECK_NOT_NULL(...)                                                    \
     do {                                                                       \
-        if ((src) == NULL) {                                                   \
-            errno = EINVAL;                                                    \
-            return -1;                                                         \
+        const void *_ptrs[] = {__VA_ARGS__};                                   \
+        for (size_t _i = 0; _i < sizeof(_ptrs) / sizeof(_ptrs[0]); _i++) {     \
+            if (_ptrs[_i] == NULL) {                                           \
+                errno = EINVAL;                                                \
+                return -1;                                                     \
+            }                                                                  \
         }                                                                      \
     } while (0)
 
@@ -84,7 +87,7 @@
 /**
  * @brief 一次性检查多个 int 参数为正数。
  */
-#define CHECK_POSITIVE_PARAMS(...)                                             \
+#define CHECK_INT_POSITIVE(...)                                                \
     do {                                                                       \
         int _args[] = {__VA_ARGS__};                                           \
         for (size_t _i = 0; _i < sizeof(_args) / sizeof(_args[0]); _i++) {     \
@@ -137,11 +140,11 @@
     } while (0)
 
 /**
- * @brief 拒绝 src 与 dst 的完全重叠，但拒绝部分重叠（包括右侧重叠和左侧重叠）。
+ * @brief 允许 src 与 dst 的完全重叠，但拒绝部分重叠（包括右侧重叠和左侧重叠）。
  *
- * 适用于反转操作。
+ * 适用于长度不变或缩小操作。已有其他防护时无需使用。
  */
-#define CHECK_REVERSE_OVERLAP(src, src_len, dst)                               \
+#define CHECK_SELF_OVERLAP_ALLOWED(src, src_len, dst)                          \
     do {                                                                       \
         if ((src_len) > 0) {                                                   \
             if ((dst) > (src) && (dst) < (src) + (src_len)) {                  \
@@ -553,8 +556,63 @@ signed char str_hdtoi(char ch);
  */
 long long str_htoi(const char *src, size_t src_buf_size);
 
-ssize_t str_squeeze(const char *src, size_t src_buf_size, char *dst,
-                    size_t dst_buf_size, char ch);
+/**
+ * @brief 从源字符串中删除所有在指定字符集合中出现过的字符，结果写入目标缓冲区。
+ *
+ * 该函数扫描源字符串 src，对于每个字符，若它出现在字符集合 set 中，则将其丢弃；
+ * 否则保留。保留的字符按原顺序写入目标缓冲区 dst，并始终以 '\0' 结尾。
+ * 该操作属于“缩小”操作，结果长度不会超过源长度。
+ *
+ * 实现采用 256 字节布尔查找表（in_set），将“字符是否在 set 中”的判断从
+ * 线性遍历优化为 O(1) 数组访问，因此总复杂度为 O(|set| + |src|)。
+ *
+ * @param src           源字符串（不必以 '\0' 结尾，受 src_buf_size 限制）
+ * @param src_buf_size  源缓冲区的物理大小（字节数）
+ * @param set           字符集合字符串，其中出现的所有字符都将从 src 中删除
+ *                      （不必以 '\0' 结尾，受 set_buf_size 限制）
+ * @param set_buf_size  字符集合缓冲区的物理大小（字节数）
+ * @param dst           目标缓冲区。若为 NULL，则必须同时设置 dst_buf_size = 0，
+ *                      此时函数仅计算所需长度，不进行写入。
+ * @param dst_buf_size  目标缓冲区的物理大小（字节数）。若 dst 非空，则必须 >
+ *                      0； 若 dst 为 NULL，则必须为 0。
+ *
+ * @return 成功时返回删除后所需的总长度（不含结尾的 '\0'）：
+ * 
+ *         - 若 dst == NULL 且 dst_buf_size == 0，仅计算长度并返回，不写入。
+ * 
+ *         - 若 dst 非空且返回值 < dst_buf_size，表示完整删除并写入。
+ * 
+ *         - 若 dst 非空且返回值 >= dst_buf_size，表示发生截断，dst 中仅存放
+ *           前 (dst_buf_size - 1) 个保留字符。
+ * 
+ *         若参数无效（src 或 set 为 NULL，或 dst 非空但 dst_buf_size == 0），
+ *         返回 -1 并设置 errno = EINVAL。
+ * 
+ *         若删除后所需长度超过 SSIZE_MAX，返回 -1 并设置 errno = EFBIG。
+ *
+ * @note
+ * - 该函数采用两遍扫描：第一遍构建查找表并统计保留字符数，第二遍实际写入。
+ * 
+ * - 由于是缩小操作，写入指针永远不会超过读取指针，因此允许 src 与 dst 完全重叠
+ *   （即 dst == src，原地操作安全）。
+ * 
+ * - 但若 dst 与 src 部分重叠（dst 落在 [src, src + src_len) 区间内），
+ *   写入可能覆盖尚未读取的源字符，因此函数会检测并拒绝这种情况，返回 -1。
+ * 
+ * - 字符集合 set 中的字符区分大小写；'\0' 不会被删除，因为 strnlen 不包含它。
+ * 
+ * - 该函数支持“仅计算长度”模式：传入 dst = NULL, dst_buf_size = 0 时，
+ *   函数不进行写入和重叠检测，直接返回所需长度。
+ *
+ * @warning 若 dst 非空，则 dst_buf_size 必须至少为 1，否则无法存放结尾的 '\0'。
+ * 
+ *          若 dst == NULL，则 dst_buf_size 必须为 0。
+ * 
+ * @warning 调用者应确保 src 和 set 指向有效的内存区域，且 src 与 dst
+ * 不部分重叠。
+ */
+ssize_t str_squeeze(const char *src, size_t src_buf_size, const char *set,
+                    size_t set_buf_size, char *dst, size_t dst_buf_size);
 
 #ifdef __cplusplus
 }
