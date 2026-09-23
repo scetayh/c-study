@@ -2,7 +2,7 @@
  * @file   string_utils.h
  * @brief  安全字符串操作函数库（复制、反转、制表符展开/压缩等）
  * @author scetayh
- * @date   2026-09-21
+ * @date   2026-09-23
  *
  * 所有函数均遵循 "snprintf 契约"：
  *
