@@ -614,6 +614,8 @@ long long str_htoi(const char *src, size_t src_buf_size);
 ssize_t str_squeeze(const char *src, size_t src_buf_size, const char *set,
                     size_t set_buf_size, char *dst, size_t dst_buf_size);
 
+ssize_t str_any(const char *src, size_t src_buf_size, const char *set, size_t set_buf_size);
+
 #ifdef __cplusplus
 }
 #endif

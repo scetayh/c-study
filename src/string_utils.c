@@ -549,3 +549,26 @@ ssize_t str_squeeze(const char *src, size_t src_buf_size, const char *set,
 
     return (ssize_t)compressed_len;
 }
+
+ssize_t str_any(const char *src, size_t src_buf_size, const char *set,
+                size_t set_buf_size) {
+    CHECK_NOT_NULL(src, set);
+
+    const size_t src_len = strnlen(src, src_buf_size);
+    const size_t set_len = strnlen(set, set_buf_size);
+
+    bool in_set[256] = {false};
+
+    for (size_t i = 0; i < set_len; i++) {
+        in_set[(unsigned char)set[i]] = true;
+    }
+
+    for (size_t i = 0; i < src_len; i++) {
+        if (in_set[(unsigned char)src[i]]) {
+            CHECK_LEN_OVERFLOW(i);
+            return (ssize_t)i;
+        }
+    }
+
+    return -1;
+}
