@@ -2,7 +2,7 @@
  * @file   string_utils.h
  * @brief  安全字符串操作函数库（复制、反转、制表符展开/压缩等）
  * @author scetayh
- * @date   2026-09-23
+ * @date   2026-09-24
  *
  * 所有函数均遵循 "snprintf 契约"：
  *
@@ -577,44 +577,85 @@ long long str_htoi(const char *src, size_t src_buf_size);
  *                      0； 若 dst 为 NULL，则必须为 0。
  *
  * @return 成功时返回删除后所需的总长度（不含结尾的 '\0'）：
- * 
+ *
  *         - 若 dst == NULL 且 dst_buf_size == 0，仅计算长度并返回，不写入。
- * 
+ *
  *         - 若 dst 非空且返回值 < dst_buf_size，表示完整删除并写入。
- * 
+ *
  *         - 若 dst 非空且返回值 >= dst_buf_size，表示发生截断，dst 中仅存放
  *           前 (dst_buf_size - 1) 个保留字符。
- * 
+ *
  *         若参数无效（src 或 set 为 NULL，或 dst 非空但 dst_buf_size == 0），
  *         返回 -1 并设置 errno = EINVAL。
- * 
+ *
  *         若删除后所需长度超过 SSIZE_MAX，返回 -1 并设置 errno = EFBIG。
  *
  * @note
  * - 该函数采用两遍扫描：第一遍构建查找表并统计保留字符数，第二遍实际写入。
- * 
+ *
  * - 由于是缩小操作，写入指针永远不会超过读取指针，因此允许 src 与 dst 完全重叠
  *   （即 dst == src，原地操作安全）。
- * 
+ *
  * - 但若 dst 与 src 部分重叠（dst 落在 [src, src + src_len) 区间内），
  *   写入可能覆盖尚未读取的源字符，因此函数会检测并拒绝这种情况，返回 -1。
- * 
+ *
  * - 字符集合 set 中的字符区分大小写；'\0' 不会被删除，因为 strnlen 不包含它。
- * 
+ *
  * - 该函数支持“仅计算长度”模式：传入 dst = NULL, dst_buf_size = 0 时，
  *   函数不进行写入和重叠检测，直接返回所需长度。
  *
  * @warning 若 dst 非空，则 dst_buf_size 必须至少为 1，否则无法存放结尾的 '\0'。
- * 
+ *
  *          若 dst == NULL，则 dst_buf_size 必须为 0。
- * 
+ *
  * @warning 调用者应确保 src 和 set 指向有效的内存区域，且 src 与 dst
  * 不部分重叠。
  */
 ssize_t str_squeeze(const char *src, size_t src_buf_size, const char *set,
                     size_t set_buf_size, char *dst, size_t dst_buf_size);
 
-ssize_t str_any(const char *src, size_t src_buf_size, const char *set, size_t set_buf_size);
+/**
+ * @brief 在源字符串中查找字符集合中任意字符第一次出现的位置。
+ *
+ * 该函数扫描源字符串 src，返回第一个属于字符集合 set 的字符所在的索引
+ * （从 0 开始计数）。若 src 中不包含 set 中的任何字符，则返回 -1。
+ * 字符比较基于原始字节值，区分大小写。
+ *
+ * 实现采用 256 字节布尔查找表，将“字符是否属于 set”的判断从线性遍历
+ * 优化为 O(1) 数组访问，因此总时间复杂度为 O(|set| + |src|)。
+ *
+ * @param src           源字符串（不必以 '\0' 结尾，受 src_buf_size 限制）
+ * @param src_buf_size  源缓冲区的物理大小（字节数）
+ * @param set           字符集合字符串，其中任意字符被匹配即算命中
+ *                      （不必以 '\0' 结尾，受 set_buf_size 限制）
+ * @param set_buf_size  字符集合缓冲区的物理大小（字节数）
+ *
+ * @return 成功时返回第一个匹配字符在 src 中的索引（0 ≤ 索引 < src_len）。
+ *
+ *         若 src 中不包含 set 中的任何字符，返回 -1，且不修改 errno。
+ *
+ *         若 src 或 set 为 NULL，返回 -1 并设置 errno = EINVAL。
+ *
+ *         若匹配索引超过 SSIZE_MAX（实际不可能发生），返回 -1 并设置
+ *         errno = EFBIG。
+ *
+ * @note
+ * - 该函数不分配内存，不修改任何输入数据。
+ *
+ * - 若调用者需要区分“未找到”与“参数错误”，应在调用前将 errno 置 0，
+ *   调用后检查：若返回 -1 且 errno == EINVAL，则为参数错误；
+ *   若返回 -1 且 errno == 0，则为未找到。
+ *
+ * - 字符集合 set 中的 '\0' 不会被纳入查找表（因为 strnlen 不包含它），
+ *   因此 '\0' 永远不会被匹配。
+ *
+ * - 该函数不支持“仅计算长度”模式（无目标缓冲区参数）。
+ *
+ * @warning 调用者应确保 src 和 set 指向有效的内存区域，且传入正确的
+ *          缓冲区大小，以避免越界读取。
+ */
+ssize_t str_any(const char *src, size_t src_buf_size, const char *set,
+                size_t set_buf_size);
 
 #ifdef __cplusplus
 }
