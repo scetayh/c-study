@@ -9,11 +9,11 @@
 #ifndef BIT_UTILS_H
 #define BIT_UTILS_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 
 #ifdef __cplusplus
 }

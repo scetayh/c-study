@@ -9,13 +9,13 @@ BIN_DIR = bin
 LIB_DIR = lib
 INC_DIR = include
 
-CPL_DIR = $(SRC_DIR)/cpl
-BIN_CPL = $(BIN_DIR)/cpl
-OBJ_CPL = $(OBJ_DIR)/cpl
-SRCS_CPL = $(wildcard $(CPL_DIR)/*.c)
-TARGETS_CPL = $(patsubst $(CPL_DIR)/%.c, $(BIN_CPL)/%, $(SRCS_CPL))
+TCPL2_DIR = $(SRC_DIR)/tcpl2
+BIN_TCPL2 = $(BIN_DIR)/tcpl2
+OBJ_TCPL2 = $(OBJ_DIR)/tcpl2
+SRCS_TCPL2 = $(wildcard $(TCPL2_DIR)/*.c)
+TARGETS_TCPL2 = $(patsubst $(TCPL2_DIR)/%.c, $(BIN_TCPL2)/%, $(SRCS_TCPL2))
 
-ALL_TARGETS = $(TARGETS_CPL)
+ALL_TARGETS = $(TARGETS_TCPL2)
 
 LIBRARY = $(LIB_DIR)/libstring_utils.a
 LIB_OBJ = $(OBJ_DIR)/string_utils.o
@@ -28,10 +28,10 @@ $(LIBRARY): $(LIB_OBJ) | $(LIB_DIR)
 $(LIB_OBJ): $(SRC_DIR)/string_utils.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-$(BIN_CPL)/%: $(CPL_DIR)/%.c $(LIBRARY) | $(BIN_CPL)
+$(BIN_TCPL2)/%: $(TCPL2_DIR)/%.c $(LIBRARY) | $(BIN_TCPL2)
 	$(CC) $(CFLAGS) $< $(LIBRARY) -o $@
 
-$(LIB_DIR) $(OBJ_DIR) $(BIN_CPL) $(OBJ_CPL):
+$(LIB_DIR) $(OBJ_DIR) $(BIN_TCPL2) $(OBJ_TCPL2):
 	mkdir -p $@
 
 clean:
