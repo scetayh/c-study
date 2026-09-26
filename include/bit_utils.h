@@ -2,7 +2,7 @@
  * @file   bit_utils.h
  * @brief  安全位运算操作函数库
  * @author scetayh
- * @date   2026-09-24
+ * @date   2026-09-26
  */
 
 #pragma once
@@ -15,8 +15,10 @@
 extern "C" {
 #endif
 
+uint32_t setbits(const uint32_t src, int pos, int width, uint32_t set);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* STRING_UTILS_H */
+#endif /* BIT_UTILS_H */

@@ -1,4 +1,6 @@
-#include "../include/string_utils.h"
+#include "string_utils.h"
+#include <stdio.h>
+#include <string.h>
 
 static inline unsigned int advance_tab_offset(unsigned int offset,
                                               int tab_width) {

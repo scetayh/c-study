@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../../include/string_utils.h"
+#include "string_utils.h"
 
 #define MAXLEN 32768
 #define TABLEN 4

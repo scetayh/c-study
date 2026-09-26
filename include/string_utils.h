@@ -1,6 +1,6 @@
 /**
  * @file   string_utils.h
- * @brief  安全字符串操作函数库（复制、反转、制表符展开/压缩等）
+ * @brief  安全字符串操作函数库
  * @author scetayh
  * @date   2026-09-24
  *
@@ -19,83 +19,10 @@
 #ifndef STRING_UTILS_H
 #define STRING_UTILS_H
 
-#include <errno.h>
-#include <limits.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/types.h>
-
-#ifndef MIN
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef MAX
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#endif
-
-/**
- * @brief 一次性检查多个指针非空。
- *
- * 适用于所有需要读取源字符串的函数。
- */
-#define CHECK_NOT_NULL(...)                                                    \
-    do {                                                                       \
-        const void *_ptrs[] = {__VA_ARGS__};                                   \
-        for (size_t _i = 0; _i < sizeof(_ptrs) / sizeof(_ptrs[0]); _i++) {     \
-            if (_ptrs[_i] == NULL) {                                           \
-                errno = EINVAL;                                                \
-                return -1;                                                     \
-            }                                                                  \
-        }                                                                      \
-    } while (0)
-
-/**
- * @brief 确保目标缓冲区必须可写。
- *
- * 适用于必须写入目标的函数，不支持“仅计算长度”模式。
- */
-#define CHECK_DST_REQUIRED(dst, dst_buf_size)                                  \
-    do {                                                                       \
-        if ((dst) == NULL || (dst_buf_size) == 0) {                            \
-            errno = EINVAL;                                                    \
-            return -1;                                                         \
-        }                                                                      \
-    } while (0)
-
-/**
- * @brief 允许 dst == NULL && dst_buf_size == 0，否则目标缓冲区必须可写。
- *
- * 适用于支持“仅计算长度”模式的函数。
- */
-#define CHECK_DST_OPTIONAL(dst, dst_buf_size)                                  \
-    do {                                                                       \
-        if ((dst) == NULL) {                                                   \
-            if ((dst_buf_size) != 0) {                                         \
-                errno = EINVAL;                                                \
-                return -1;                                                     \
-            }                                                                  \
-        } else {                                                               \
-            if ((dst_buf_size) == 0) {                                         \
-                errno = EINVAL;                                                \
-                return -1;                                                     \
-            }                                                                  \
-        }                                                                      \
-    } while (0)
-
-/**
- * @brief 一次性检查多个 int 参数为正数。
- */
-#define CHECK_INT_POSITIVE(...)                                                \
-    do {                                                                       \
-        int _args[] = {__VA_ARGS__};                                           \
-        for (size_t _i = 0; _i < sizeof(_args) / sizeof(_args[0]); _i++) {     \
-            if (_args[_i] <= 0) {                                              \
-                errno = EINVAL;                                                \
-                return -1;                                                     \
-            }                                                                  \
-        }                                                                      \
-    } while (0)
+#include "buffer_utils.h"
+#include "utils_common.h"
+#include <stddef.h>    // size_t
+#include <sys/types.h> // ssize_t
 
 /**
  * @brief 确保制表符宽度不超过列宽限制。
@@ -105,67 +32,6 @@
         if ((tab_width) > (col_lim)) {                                         \
             errno = EINVAL;                                                    \
             return -1;                                                         \
-        }                                                                      \
-    } while (0)
-
-/**
- * @brief 检查计算结果是否超过 ssize_t 正数范围。
- */
-#define CHECK_LEN_OVERFLOW(result_len)                                         \
-    do {                                                                       \
-        if ((result_len) > (size_t)SSIZE_MAX) {                                \
-            errno = EFBIG;                                                     \
-            return -1;                                                         \
-        }                                                                      \
-    } while (0)
-
-/**
- * @brief 拒绝 src 与 dst 的任何重叠。
- *
- * 适用于膨胀操作。
- */
-#define CHECK_NO_OVERLAP(src, src_len, dst, result_len)                        \
-    do {                                                                       \
-        if ((src_len) > 0) {                                                   \
-            if ((dst) >= (src) && (dst) < (src) + (src_len)) {                 \
-                errno = EINVAL;                                                \
-                return -1;                                                     \
-            }                                                                  \
-            if ((dst) < (src) && (dst) + (result_len) > (src)) {               \
-                errno = EINVAL;                                                \
-                return -1;                                                     \
-            }                                                                  \
-        }                                                                      \
-    } while (0)
-
-/**
- * @brief 允许 src 与 dst 的完全重叠，但拒绝部分重叠（包括右侧重叠和左侧重叠）。
- *
- * 适用于长度不变或缩小操作。已有其他防护时无需使用。
- */
-#define CHECK_SELF_OVERLAP_ALLOWED(src, src_len, dst)                          \
-    do {                                                                       \
-        if ((src_len) > 0) {                                                   \
-            if ((dst) > (src) && (dst) < (src) + (src_len)) {                  \
-                errno = EINVAL;                                                \
-                return -1;                                                     \
-            }                                                                  \
-            if ((dst) < (src) && (dst) + (src_len) > (src)) {                  \
-                errno = EINVAL;                                                \
-                return -1;                                                     \
-            }                                                                  \
-        }                                                                      \
-    } while (0)
-
-/**
- * @brief 在“仅计算长度”模式下提前返回。
- *
- * 适用于所有支持 dst == NULL && dst_buf_size == 0 的函数。
- */
-#define RETURN_LEN_IF_NO_DST(dst, dst_buf_size, result_len)                    \
-    do {                                                                       \
-        if ((dst) == NULL || (dst_buf_size) == 0) {                            \
-            return (ssize_t)(result_len);                                      \
         }                                                                      \
     } while (0)
 

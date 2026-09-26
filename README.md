@@ -43,3 +43,10 @@ git push --set-upstream origin main
 <big>**scetayh 专用尼哥长期招募。**</big>
 
 （“……至军，立诛杀……”格式）
+
+## 笔记
+
+### 1.
+
+- p0 & 10
+- p1 | 01

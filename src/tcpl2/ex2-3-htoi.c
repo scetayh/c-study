@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../include/string_utils.h"
+#include "string_utils.h"
 
 #define MAXLEN 1024
 

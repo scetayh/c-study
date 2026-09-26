@@ -1,40 +1,74 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -Iinclude
 AR = ar
+
+CPPFLAGS = -Iinclude -MMD -MP -D_POSIX_C_SOURCE=200809L
+CFLAGS = -Wall -Wextra -std=c23 -g
 ARFLAGS = rcs
 
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 LIB_DIR = lib
-INC_DIR = include
 
-TCPL2_DIR = $(SRC_DIR)/tcpl2
-BIN_TCPL2 = $(BIN_DIR)/tcpl2
-OBJ_TCPL2 = $(OBJ_DIR)/tcpl2
-SRCS_TCPL2 = $(wildcard $(TCPL2_DIR)/*.c)
-TARGETS_TCPL2 = $(patsubst $(TCPL2_DIR)/%.c, $(BIN_TCPL2)/%, $(SRCS_TCPL2))
+LIBUTILS = $(LIB_DIR)/libutils.a
 
-ALL_TARGETS = $(TARGETS_TCPL2)
+UTILS_OBJ = \
+	$(OBJ_DIR)/string_utils.o
 
-LIBRARY = $(LIB_DIR)/libstring_utils.a
-LIB_OBJ = $(OBJ_DIR)/string_utils.o
+TCPL2_SRC = $(wildcard $(SRC_DIR)/tcpl2/*.c)
+TCPL2_BIN = $(patsubst $(SRC_DIR)/tcpl2/%.c,$(BIN_DIR)/tcpl2/%,$(TCPL2_SRC))
 
-all: $(LIBRARY) $(ALL_TARGETS)
+DEP_FILES = $(UTILS_OBJ:.o=.d)
 
-$(LIBRARY): $(LIB_OBJ) | $(LIB_DIR)
-	$(AR) $(ARFLAGS) $@ $<
 
-$(LIB_OBJ): $(SRC_DIR)/string_utils.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+.PHONY: all lib tcpl2 clean
 
-$(BIN_TCPL2)/%: $(TCPL2_DIR)/%.c $(LIBRARY) | $(BIN_TCPL2)
-	$(CC) $(CFLAGS) $< $(LIBRARY) -o $@
+all: $(LIBUTILS) $(TCPL2_BIN)
 
-$(LIB_DIR) $(OBJ_DIR) $(BIN_TCPL2) $(OBJ_TCPL2):
-	mkdir -p $@
+lib: $(LIBUTILS)
+
+tcpl2: $(TCPL2_BIN)
+
+
+# ------------------------------------------------------------
+# Library
+# ------------------------------------------------------------
+
+$(LIBUTILS): $(UTILS_OBJ)
+	@mkdir -p $(LIB_DIR)
+	$(AR) $(ARFLAGS) $@ $^
+
+
+# ------------------------------------------------------------
+# Object files
+# ------------------------------------------------------------
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+
+# ------------------------------------------------------------
+# TCPL exercises
+# ------------------------------------------------------------
+
+$(BIN_DIR)/tcpl2/%: $(SRC_DIR)/tcpl2/%.c $(LIBUTILS)
+	@mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBUTILS) -o $@
+
+
+# ------------------------------------------------------------
+# Dependencies
+# ------------------------------------------------------------
+
+-include $(DEP_FILES)
+
+
+# ------------------------------------------------------------
+# Clean
+# ------------------------------------------------------------
 
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR) $(LIB_DIR)
-
-.PHONY: all clean
+	rm -rf $(OBJ_DIR)
+	rm -rf $(LIB_DIR)
+	rm -rf $(BIN_DIR)/tcpl2
