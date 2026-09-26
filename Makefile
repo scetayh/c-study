@@ -13,13 +13,15 @@ LIB_DIR = lib
 LIBUTILS = $(LIB_DIR)/libutils.a
 
 UTILS_OBJ = \
-	$(OBJ_DIR)/string_utils.o
+	$(OBJ_DIR)/string_utils.o \
+	$(OBJ_DIR)/bit32_utils.o
 
 TCPL2_SRC = $(wildcard $(SRC_DIR)/tcpl2/*.c)
 TCPL2_BIN = $(patsubst $(SRC_DIR)/tcpl2/%.c,$(BIN_DIR)/tcpl2/%,$(TCPL2_SRC))
 
-DEP_FILES = $(UTILS_OBJ:.o=.d)
+DEP_FILES = $(UTILS_OBJ:.o=.d) $(addsuffix .d,$(TCPL2_BIN))
 
+-include $(DEP_FILES)
 
 .PHONY: all lib tcpl2 clean
 
