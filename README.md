@@ -1,20 +1,20 @@
 # c-study
 
-> 这不是项目。只是做题留下的记录
+> **这不是项目。只是做题留下的记录**
 >
->   —— [liziyu0714](https://github.com/liziyu0714/)
+> <p style="text-align: right;">—— <a href="https://github.com/liziyu0714/">liziyu0714</a></p>
 
-> 这不是项目。只是学 C~~B~~ 留下的记录
+> **这不是项目。只是学 C** ~~B~~ **留下的记录**
 >
->   —— [scetayh](https://github.com/scetayh/)
+> <p style="text-align: right;">—— <a href="https://github.com/scetayh/">scetayh</a></p>
 
-> 走 CB！
+> **走 CB！**
 >
->   —— To Haiu
+> <p style="text-align: right;">—— To Haiu</p>
 
-> 学测必~~胜~~，~~元~~旦快乐，高~~考~~加油！
+> **学测必**~~胜~~，~~元~~**旦快乐**，**高**~~考~~**加油！**
 >
->   —— [AyariaProscott](https://github.com/AyariaPrescott)（前两句）、[scetayh](https://github.com/scetayh/)（后一句）
+> <p style="text-align: right;">—— <a href="https://github.com/AyariaPrescott/">AyariaPrescott</a>（前两句）、<a href="https://github.com/scetayh/">scetayh</a>（后一句）</p>
 
 ## 编译
 
@@ -30,7 +30,7 @@ make all
 make clean
 ```
 
-## 提交（通篇废话）
+## 提交
 
 ``` bash
 git add .
