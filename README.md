@@ -48,5 +48,5 @@ git push --set-upstream origin main
 
 ### 1.
 
-- p0 & 10
-- p1 | 01
+- '0{m}*0{n}' & '0{m}1{p}0{n}'
+- '1{m}*1{n}' | '1{m}0{p}1{n}'
