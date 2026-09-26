@@ -26,6 +26,10 @@ extern "C" {
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
+#ifndef ABS
+#define ABS(a, b) (((a) > (b)) ? (a - b) : (b - a))
+#endif
+
 /**
  * @brief 一次性检查多个指针非空。
  *

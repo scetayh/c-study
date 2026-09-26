@@ -254,7 +254,7 @@ ssize_t str_detab(const char *src, size_t src_buf_size, char *dst,
  * @note
  * - 该函数采用两遍扫描：第一遍计算压缩后的总长度，第二遍实际写入。
  *
- * - 由于压缩操作不会使字符串变长（总字符数 ≤ 源长度），因此允许
+ * - 由于压缩操作不会使字符串变长（总字符数 <= 源长度），因此允许
  *   src 和 dst 指向相同或部分重叠的内存区域（例如原地压缩）。
  *
  * - 若目标缓冲区不足以容纳全部压缩结果，函数会截断并安全终止，
@@ -262,7 +262,7 @@ ssize_t str_detab(const char *src, size_t src_buf_size, char *dst,
  *
  * - 制表符和换行符会重置列偏移为 0，从而影响后续空格的压缩决策。
  *
- * - 压缩后的总长度总是 ≤ src_len（仅当 tab_width >= 2 时通常如此）。
+ * - 压缩后的总长度总是 <= src_len（仅当 tab_width >= 2 时通常如此）。
  *
  * - 该函数支持“仅计算长度”模式：传入 dst = NULL, dst_buf_size = 0
  *   时，函数不进行写入和重叠检测，直接返回所需长度，可用于调用者预先分配缓冲区。
@@ -360,7 +360,7 @@ ssize_t str_collapse_blank(const char *src, size_t src_buf_size, char *dst,
  *                      此时函数仅计算所需长度，不进行写入
  * @param dst_buf_size  目标缓冲区的物理大小（字节数）。若 dst 非空，则必须 >
  * 0； 若 dst 为 NULL，则必须为 0
- * @param tab_width     制表符宽度（列数），必须 > 0，且必须 ≤ col_lim
+ * @param tab_width     制表符宽度（列数），必须 > 0，且必须 <= col_lim
  * @param col_lim       每行最大列数，必须 > 0，且必须 ≥ tab_width
  *
  * @return 成功时返回折行后所需的总长度（不含结尾的 '\0'）：
@@ -397,7 +397,7 @@ ssize_t str_collapse_blank(const char *src, size_t src_buf_size, char *dst,
  *
  * @warning src 和 dst 不得重叠，否则行为未定义。
  *
- * @warning tab_width 必须 ≤ col_lim，否则无法将制表符放入任何一行。
+ * @warning tab_width 必须 <= col_lim，否则无法将制表符放入任何一行。
  */
 ssize_t str_wrap(const char *src, size_t src_buf_size, char *dst,
                  size_t dst_buf_size, int tab_width, int col_limit);
@@ -495,7 +495,7 @@ ssize_t str_squeeze(const char *src, size_t src_buf_size, const char *set,
  *                      （不必以 '\0' 结尾，受 set_buf_size 限制）
  * @param set_buf_size  字符集合缓冲区的物理大小（字节数）
  *
- * @return 成功时返回第一个匹配字符在 src 中的索引（0 ≤ 索引 < src_len）。
+ * @return 成功时返回第一个匹配字符在 src 中的索引（0 <= 索引 < src_len）。
  *
  *         若 src 中不包含 set 中的任何字符，返回 -1，且不修改 errno。
  *
