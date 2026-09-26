@@ -19,7 +19,6 @@
 #ifndef STRING_UTILS_H
 #define STRING_UTILS_H
 
-#include <bits/posix1_lim.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
