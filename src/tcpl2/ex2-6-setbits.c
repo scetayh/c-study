@@ -1,15 +1,12 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <inttypes.h>
 
+// 把 x 中从第 p 位开始的连续 n 个 bit，替换成 y 的最低 n 个 bit，而 x 的其他 bit 保持不变。
 uint32_t setbits(const uint32_t x, int p, int n, uint32_t y) {
-    if (p < 0 || n <= 0 || p > 32 || n > 32 - p) {
-        errno = EINVAL;
-        return x;
-    }
-
-    uint32_t mask = (n == 32) ? UINT32_MAX : (UINT32_C(1) << n) - 1;
+    
 }
 
-int main() {}
+int main() {
+    
+}
