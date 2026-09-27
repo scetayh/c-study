@@ -55,7 +55,7 @@ ssize_t str_read(char *dst, size_t dst_buf_size) {
 
 ssize_t str_copy(const char *src, size_t src_buf_size, char *dst,
                  size_t dst_buf_size) {
-    CHECK_NOT_NULL(src);
+    CHECK_SRC_NOT_NULL_RET(src);
     CHECK_DST_REQUIRED(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
@@ -73,7 +73,7 @@ ssize_t str_copy(const char *src, size_t src_buf_size, char *dst,
 
 ssize_t str_reverse(const char *src, size_t src_buf_size, char *dst,
                     size_t dst_buf_size) {
-    CHECK_NOT_NULL(src);
+    CHECK_SRC_NOT_NULL_RET(src);
     CHECK_DST_REQUIRED(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
@@ -94,7 +94,7 @@ ssize_t str_reverse(const char *src, size_t src_buf_size, char *dst,
 
 ssize_t str_detab(const char *src, size_t src_buf_size, char *dst,
                   size_t dst_buf_size, int tab_width) {
-    CHECK_NOT_NULL(src);
+    CHECK_SRC_NOT_NULL_RET(src);
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
@@ -144,7 +144,7 @@ ssize_t str_detab(const char *src, size_t src_buf_size, char *dst,
 
 ssize_t str_entab(const char *src, size_t src_buf_size, char *dst,
                   size_t dst_buf_size, int tab_width) {
-    CHECK_NOT_NULL(src);
+    CHECK_SRC_NOT_NULL_RET(src);
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
     CHECK_INT_POSITIVE(tab_width);
 
@@ -221,7 +221,7 @@ ssize_t str_entab(const char *src, size_t src_buf_size, char *dst,
 
 ssize_t str_collapse_blank(const char *src, size_t src_buf_size, char *dst,
                            size_t dst_buf_size) {
-    CHECK_NOT_NULL(src);
+    CHECK_SRC_NOT_NULL_RET(src);
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
@@ -267,7 +267,7 @@ ssize_t str_collapse_blank(const char *src, size_t src_buf_size, char *dst,
 
 ssize_t str_wrap(const char *src, size_t src_buf_size, char *dst,
                  size_t dst_buf_size, int tab_width, int col_lim) {
-    CHECK_NOT_NULL(src);
+    CHECK_SRC_NOT_NULL_RET(src);
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
     CHECK_INT_POSITIVE(tab_width, col_lim);
     CHECK_TAB_WIDTH_LE_COL_LIM(tab_width, col_lim);
@@ -518,7 +518,7 @@ long long str_htoi(const char *src, size_t src_buf_size) {
 
 ssize_t str_squeeze(const char *src, size_t src_buf_size, const char *set,
                     size_t set_buf_size, char *dst, size_t dst_buf_size) {
-    CHECK_NOT_NULL(src, set);
+    CHECK_SRC_SET_NOT_NULL_RET(src, set);
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
@@ -555,7 +555,7 @@ ssize_t str_squeeze(const char *src, size_t src_buf_size, const char *set,
 
 ssize_t str_any(const char *src, size_t src_buf_size, const char *set,
                 size_t set_buf_size) {
-    CHECK_NOT_NULL(src, set);
+    CHECK_SRC_SET_NOT_NULL_RET(src, set);
 
     const size_t src_len = strnlen(src, src_buf_size);
     const size_t set_len = strnlen(set, set_buf_size);

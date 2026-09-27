@@ -14,7 +14,7 @@ int main() {
     // position:        ^^^
     //               76543210
 
-    u32_bit_replace(src, 2, set, 4, 3, &result);
+    u32_replace(src, 2, set, 4, 3, &result);
 
     char src_str[33];
     char set_str[33];

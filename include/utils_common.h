@@ -31,17 +31,19 @@ extern "C" {
 #endif
 
 /**
- * @brief 一次性检查多个指针非空。
+ * @brief 检查一个或多个指针非空。若任一为 NULL，设置 errno = EINVAL
+ *        并返回指定的值。
  *
- * 适用于所有需要读取源字符串的函数。
+ * @param ret    返回值（可以是 false、-1、NULL 等）。
+ * @param ...    要检查的指针列表（至少一个）。
  */
-#define CHECK_NOT_NULL(...)                                                    \
+#define CHECK_NOT_NULL_RET(ret, ...)                                           \
     do {                                                                       \
         const void *_ptrs[] = {__VA_ARGS__};                                   \
         for (size_t _i = 0; _i < sizeof(_ptrs) / sizeof(_ptrs[0]); _i++) {     \
             if (_ptrs[_i] == NULL) {                                           \
                 errno = EINVAL;                                                \
-                return -1;                                                     \
+                return (ret);                                                  \
             }                                                                  \
         }                                                                      \
     } while (0)

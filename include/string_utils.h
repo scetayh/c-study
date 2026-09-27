@@ -24,6 +24,16 @@
 #include <stddef.h>    // size_t
 #include <sys/types.h> // ssize_t
 
+#define CHECK_SRC_NOT_NULL_RET(src)                                            \
+    do {                                                                       \
+        CHECK_NOT_NULL_RET(-1, src);                                           \
+    } while (0)
+   
+#define CHECK_SRC_SET_NOT_NULL_RET(src, set)                                            \
+    do {                                                                       \
+        CHECK_NOT_NULL_RET(-1, src, set);                                           \
+    } while (0)
+
 /**
  * @brief 确保制表符宽度不超过列宽限制。
  */

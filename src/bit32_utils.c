@@ -1,18 +1,33 @@
 #include "bit32_utils.h"
 #include <errno.h>
 
-bool u32_bit_replace(const uint32_t src, int src_pos, const uint32_t set,
-                     int set_pos, int width, uint32_t *result) {
-    if (src_pos < 0 || src_pos > 31 || set_pos < 0 || set_pos > 31 ||
-        width < 1 || width > 32 - src_pos || width > 32 - set_pos) {
-        errno = EINVAL;
-        return false;
-    }
+static inline uint32_t u32_mask(int pos, int width) {
+    return (width == 32 ? UINT32_MAX : (UINT32_C(1) << width) - 1) << pos;
+}
 
-    uint32_t mask = width == 32 ? UINT32_MAX : (UINT32_C(1) << width) - 1;
-    uint32_t src_mask = ~(mask << src_pos);
-    uint32_t set_bits = (set >> set_pos) & mask;
-    *result = (src & src_mask) | (set_bits << src_pos);
+static inline uint32_t u32_extract(uint32_t src, int src_pos, int width) {
+    return src & u32_mask(src_pos, width);
+}
+
+static inline uint32_t u32_clear(uint32_t src, int src_pos, int width) {
+    return src & ~u32_mask(src_pos, width);
+}
+
+bool u32_replace(const uint32_t src, int src_pos, const uint32_t set,
+                 int set_pos, int width, uint32_t *result) {
+    CHECK_U32_BIT_REPLACE_RET(src_pos, set_pos, width);
+    CHECK_RESULT_NOT_NULL_RET(result);
+
+    *result = u32_clear(src, src_pos, width) |
+              (u32_extract(set >> set_pos, 0, width) << src_pos);
+    return true;
+}
+
+bool u32_flip(uint32_t src, int src_pos, int width, uint32_t *result) {
+    CHECK_U32_BIT_RANGE_RET(src_pos, width);
+    CHECK_RESULT_NOT_NULL_RET(result);
+
+    *result = u32_extract(~src, src_pos, width) | u32_clear(src, src_pos, width);
 
     return true;
 }
