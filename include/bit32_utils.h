@@ -117,6 +117,72 @@ bool u32_replace(uint32_t src, int src_pos, uint32_t set, int set_pos,
 bool u32_flip(uint32_t src, int src_pos, int width, uint32_t *result);
 
 /**
+ * @brief 将 32 位无符号整数循环左移指定的位数。
+ *
+ * 循环左移是指：从最高位移出的位，依次补到最低位。
+ * 
+ * 例如，0b1001 循环左移 1 位得到 0b0011。
+ *
+ * 移位量 shift 会被自动规范化为 [0, 31] 范围内的等效值：
+ * 
+ * - shift == 0 或 shift 为 32 的倍数时，返回原值。
+ * 
+ * - shift 为负数时，等价于向相反方向旋转。例如左移 -1 位等价于右移 1 位。
+ *
+ * @param src    源 32 位无符号整数。
+ * @param shift  移位量，可为任意整数（正、负、零，或超过 32）。
+ *
+ * @return 循环左移后的结果。
+ *
+ * @note 该函数是纯函数，不修改任何全局状态，也不设置 errno。
+ * 
+ *       由于 uint32_t 位宽固定为 32，移位量在内部按模 32 处理。
+ */
+uint32_t u32_rotate_left(uint32_t src, int shift);
+
+/**
+ * @brief 将 32 位无符号整数循环右移指定的位数。
+ *
+ * 循环右移是指：从最低位移出的位，依次补到最高位。
+ * 
+ * 例如，0b1001 循环右移 1 位得到 0b1100。
+ *
+ * 移位量 shift 会被自动规范化为 [0, 31] 范围内的等效值：
+ * 
+ * - shift == 0 或 shift 为 32 的倍数时，返回原值。
+ * 
+ * - shift 为负数时，等价于向相反方向旋转。例如右移 -1 位等价于左移 1 位。
+ *
+ * @param src    源 32 位无符号整数。
+ * @param shift  移位量，可为任意整数（正、负、零，或超过 32）。
+ *
+ * @return 循环右移后的结果。
+ *
+ * @note 该函数是纯函数，不修改任何全局状态，也不设置 errno。
+ * 
+ *       由于 uint32_t 位宽固定为 32，移位量在内部按模 32 处理。
+ */
+uint32_t u32_rotate_right(uint32_t src, int shift);
+
+/**
+ * @brief 统计 32 位无符号整数中值为 1 的二进制位个数（popcount）。
+ *
+ * 该函数采用 Brian Kernighan 算法：每次执行 src &= src - 1，
+ * 都会清除 src 中最右侧的 1。循环执行的次数即为置位个数。
+ *
+ * 例如，src = 0b1011_0100 中有 4 个 1，函数返回 4。
+ *
+ * @param src  待统计的 32 位无符号整数。
+ *
+ * @return src 中值为 1 的位数，范围 [0, 32]。
+ *
+ * @note 该函数是纯函数，不修改输入参数，不设置 errno。
+ * 
+ *       时间复杂度为 O(k)，其中 k 为置位个数；空间复杂度 O(1)。
+ */
+int u32_popcount(uint32_t src);
+
+/**
  * @brief 将 uint32_t 转换为 32 位二进制字符串。
  *
  * @param src           待转换的无符号 32 位整数。

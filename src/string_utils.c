@@ -1,7 +1,7 @@
 #include "string_utils.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint.h>
 
 static inline unsigned int advance_tab_offset(unsigned int offset,
                                               int tab_width) {
@@ -77,6 +77,9 @@ ssize_t str_reverse(const char *src, size_t src_buf_size, char *dst,
     CHECK_DST_REQUIRED(dst, dst_buf_size);
 
     const size_t src_len = strnlen(src, src_buf_size);
+
+    CHECK_LEN_OVERFLOW(src_len);
+
     const size_t dst_len = MIN(src_len, dst_buf_size - 1);
 
     CHECK_SELF_OVERLAP_ALLOWED(src, src_len, dst);
@@ -84,10 +87,7 @@ ssize_t str_reverse(const char *src, size_t src_buf_size, char *dst,
     for (size_t i = 0; i < dst_len; i++) {
         dst[i] = src[src_len - i - 1];
     }
-
     dst[dst_len] = '\0';
-
-    CHECK_LEN_OVERFLOW(src_len);
 
     return (ssize_t)src_len;
 }
@@ -574,4 +574,54 @@ ssize_t str_any(const char *src, size_t src_buf_size, const char *set,
     }
 
     return -1;
+}
+
+ssize_t str_upper(const char *src, size_t src_buf_size, char *dst,
+                  size_t dst_buf_size) {
+    CHECK_SRC_NOT_NULL_RET(src);
+    CHECK_DST_REQUIRED(dst, dst_buf_size);
+
+    const size_t src_len = strnlen(src, src_buf_size);
+
+    CHECK_LEN_OVERFLOW(src_len);
+
+    const size_t dst_len = MIN(src_len, dst_buf_size - 1);
+
+    CHECK_SELF_OVERLAP_ALLOWED(src, src_len, dst);
+
+    for (size_t i = 0; i < dst_len; i++) {
+        if (src[i] >= 97 && src[i] <= 122) {
+            dst[i] = src[i] + 'A' - 'a';
+        } else {
+            dst[i] = src[i];
+        }
+    }
+    dst[dst_len] = '\0';
+
+    return (ssize_t)src_len;
+}
+
+ssize_t str_lower(const char *src, size_t src_buf_size, char *dst,
+                  size_t dst_buf_size) {
+    CHECK_SRC_NOT_NULL_RET(src);
+    CHECK_DST_REQUIRED(dst, dst_buf_size);
+
+    const size_t src_len = strnlen(src, src_buf_size);
+
+    CHECK_LEN_OVERFLOW(src_len);
+
+    const size_t dst_len = MIN(src_len, dst_buf_size - 1);
+
+    CHECK_SELF_OVERLAP_ALLOWED(src, src_len, dst);
+
+    for (size_t i = 0; i < dst_len; i++) {
+        if (src[i] >= 65 && src[i] <= 90) {
+            dst[i] = src[i] + 'a' - 'A';
+        } else {
+            dst[i] = src[i];
+        }
+    }
+    dst[dst_len] = '\0';
+
+    return (ssize_t)src_len;
 }

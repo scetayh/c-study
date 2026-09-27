@@ -28,10 +28,10 @@
     do {                                                                       \
         CHECK_NOT_NULL_RET(-1, src);                                           \
     } while (0)
-   
-#define CHECK_SRC_SET_NOT_NULL_RET(src, set)                                            \
+
+#define CHECK_SRC_SET_NOT_NULL_RET(src, set)                                   \
     do {                                                                       \
-        CHECK_NOT_NULL_RET(-1, src, set);                                           \
+        CHECK_NOT_NULL_RET(-1, src, set);                                      \
     } while (0)
 
 /**
@@ -494,6 +494,7 @@ ssize_t str_squeeze(const char *src, size_t src_buf_size, const char *set,
  *
  * 该函数扫描源字符串 src，返回第一个属于字符集合 set 的字符所在的索引
  * （从 0 开始计数）。若 src 中不包含 set 中的任何字符，则返回 -1。
+ *
  * 字符比较基于原始字节值，区分大小写。
  *
  * 实现采用 256 字节布尔查找表，将“字符是否属于 set”的判断从线性遍历
@@ -531,6 +532,99 @@ ssize_t str_squeeze(const char *src, size_t src_buf_size, const char *set,
  */
 ssize_t str_any(const char *src, size_t src_buf_size, const char *set,
                 size_t set_buf_size);
+
+/**
+ * @brief 将源字符串中的小写字母转换为大写，结果写入目标缓冲区。
+ *
+ * 该函数扫描源字符串 src，将其中的小写字母（'a'~'z'）转换为对应的大写字母，
+ * 其他字符原样复制到目标缓冲区 dst。若 dst 空间不足，则截断，但返回值仍为
+ * 源字符串的完整长度，调用者可通过返回值判断是否发生截断。
+ *
+ * @param src           源字符串（不必以 '\0' 结尾，受 src_buf_size 限制）
+ * @param src_buf_size  源缓冲区的物理大小（字节数）
+ * @param dst           目标缓冲区。若为 NULL，则必须同时设置 dst_buf_size = 0，
+ *                      此时函数仅计算所需长度，不进行写入。
+ * @param dst_buf_size  目标缓冲区的物理大小（字节数）。若 dst 非空，则必须 > 0；
+ *                      若 dst 为 NULL，则必须为 0。
+ *
+ * @return 成功时返回源字符串所需的总长度（不含结尾的 '\0'）：
+ * 
+ *         - 若 dst == NULL 且 dst_buf_size == 0，仅计算长度并返回，不写入。
+ * 
+ *         - 若 dst 非空且返回值 < dst_buf_size，表示完整转换并写入。
+ * 
+ *         - 若 dst 非空且返回值 >= dst_buf_size，表示发生截断，dst 中仅存放
+ *           前 (dst_buf_size - 1) 个字符。
+ * 
+ *         若参数无效（src 为 NULL，或 dst 非空但 dst_buf_size == 0），
+ *         返回 -1 并设置 errno = EINVAL。
+ * 
+ *         若源字符串长度超过 SSIZE_MAX，返回 -1 并设置 errno = EFBIG。
+ *
+ * @note
+ * - 该函数允许 src 与 dst 完全重叠（即 dst == src，原地转换安全），
+ *   但拒绝部分重叠（dst 落在 [src, src + src_len) 区间内），
+ *   因为部分重叠会导致写入覆盖尚未读取的源字符。
+ * 
+ * - 字符转换仅针对 ASCII 小写字母；其他字符（包括非字母、已是大写、
+ *   数字、标点等）保持不变。
+ * 
+ * - 该函数是纯函数，不修改 src。
+ *
+ * @warning 若 dst 非空，则 dst_buf_size 必须至少为 1，否则无法存放结尾的 '\0'。
+ * 
+ *          若 dst == NULL，则 dst_buf_size 必须为 0。
+ * 
+ * @warning 调用者应确保 src 和 dst 指向有效的内存区域，且不部分重叠。
+ */
+ssize_t str_upper(const char *src, size_t src_buf_size, char *dst,
+                  size_t dst_buf_size);
+
+/**
+ * @brief 将源字符串中的大写字母转换为小写，结果写入目标缓冲区。
+ *
+ * 该函数扫描源字符串 src，将其中的大写字母（'A'~'Z'）转换为对应的小写字母，
+ * 其他字符原样复制到目标缓冲区 dst。若 dst 空间不足，则截断，但返回值仍为
+ * 源字符串的完整长度，调用者可通过返回值判断是否发生截断。
+ *
+ * @param src           源字符串（不必以 '\0' 结尾，受 src_buf_size 限制）
+ * @param src_buf_size  源缓冲区的物理大小（字节数）
+ * @param dst           目标缓冲区。若为 NULL，则必须同时设置 dst_buf_size = 0，
+ *                      此时函数仅计算所需长度，不进行写入。
+ * @param dst_buf_size  目标缓冲区的物理大小（字节数）。若 dst 非空，则必须 > 0；
+ *                      若 dst 为 NULL，则必须为 0。
+ *
+ * @return 成功时返回源字符串所需的总长度（不含结尾的 '\0'）：
+ * 
+ *         - 若 dst == NULL 且 dst_buf_size == 0，仅计算长度并返回，不写入。
+ * 
+ *         - 若 dst 非空且返回值 < dst_buf_size，表示完整转换并写入。
+ * 
+ *         - 若 dst 非空且返回值 >= dst_buf_size，表示发生截断，dst 中仅存放
+ *           前 (dst_buf_size - 1) 个字符。
+ * 
+ *         若参数无效（src 为 NULL，或 dst 非空但 dst_buf_size == 0），
+ *         返回 -1 并设置 errno = EINVAL。
+ * 
+ *         若源字符串长度超过 SSIZE_MAX，返回 -1 并设置 errno = EFBIG。
+ *
+ * @note
+ * - 该函数允许 src 与 dst 完全重叠（即 dst == src，原地转换安全），
+ *   但拒绝部分重叠（dst 落在 [src, src + src_len) 区间内），
+ *   因为部分重叠会导致写入覆盖尚未读取的源字符。
+ * 
+ * - 字符转换仅针对 ASCII 大写字母；其他字符（包括非字母、已是小写、
+ *   数字、标点等）保持不变。
+ * 
+ * - 该函数是纯函数，不修改 src。
+ *
+ * @warning 若 dst 非空，则 dst_buf_size 必须至少为 1，否则无法存放结尾的 '\0'。
+ * 
+ *          若 dst == NULL，则 dst_buf_size 必须为 0。
+ * @warning 调用者应确保 src 和 dst 指向有效的内存区域，且不部分重叠。
+ */
+ssize_t str_lower(const char *src, size_t src_buf_size, char *dst,
+                  size_t dst_buf_size);
 
 #ifdef __cplusplus
 }

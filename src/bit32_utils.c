@@ -13,6 +13,11 @@ static inline uint32_t u32_clear(uint32_t src, int src_pos, int width) {
     return src & ~u32_mask(src_pos, width);
 }
 
+static inline int u32_normalize_shift(int shift) {
+    int s = shift % 32;
+    return (s < 0) ? s + 32 : s;
+}
+
 bool u32_replace(const uint32_t src, int src_pos, const uint32_t set,
                  int set_pos, int width, uint32_t *result) {
     CHECK_U32_BIT_REPLACE_RET(src_pos, set_pos, width);
@@ -27,9 +32,30 @@ bool u32_flip(uint32_t src, int src_pos, int width, uint32_t *result) {
     CHECK_U32_BIT_RANGE_RET(src_pos, width);
     CHECK_RESULT_NOT_NULL_RET(result);
 
-    *result = u32_extract(~src, src_pos, width) | u32_clear(src, src_pos, width);
+    *result =
+        u32_extract(~src, src_pos, width) | u32_clear(src, src_pos, width);
 
     return true;
+}
+
+uint32_t u32_rotate_left(uint32_t src, int shift) {
+    int nshift = u32_normalize_shift(shift);
+    return nshift ? (src << nshift) | (src >> (32 - nshift)) : src;
+}
+
+uint32_t u32_rotate_right(uint32_t src, int shift) {
+    int nshift = u32_normalize_shift(shift);
+    return nshift ? (src >> nshift) | (src << (32 - nshift)) : src;
+}
+
+int u32_popcount(uint32_t src) {
+    int count = 0;
+
+    for (; src; count++) {
+        src &= src - 1; // Brian Kernighan 算法
+    }
+
+    return count;
 }
 
 ssize_t u32_to_bin_str(uint32_t src, char *dst, size_t dst_buf_size) {
