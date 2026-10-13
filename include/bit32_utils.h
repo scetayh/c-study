@@ -194,6 +194,8 @@ int u32_popcount(uint32_t src);
  */
 ssize_t u32_to_bin_str(uint32_t src, char *dst, size_t dst_buf_size);
 
+ssize_t u32_to_str(uint32_t src, char *dst, size_t dst_buf_size);
+
 #ifdef __cplusplus
 }
 #endif

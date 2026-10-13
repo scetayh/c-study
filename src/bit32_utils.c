@@ -61,7 +61,7 @@ int u32_popcount(uint32_t src) {
 ssize_t u32_to_bin_str(uint32_t src, char *dst, size_t dst_buf_size) {
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
 
-    if (dst == NULL) {
+    if (dst == NULL && dst_buf_size == 0) {
         return 32; // 仅计算长度模式
     }
 
@@ -76,4 +76,33 @@ ssize_t u32_to_bin_str(uint32_t src, char *dst, size_t dst_buf_size) {
     dst[32] = '\0';
 
     return 32;
+}
+
+ssize_t u32_to_str(uint32_t src, char *dst, size_t dst_buf_size) {
+    CHECK_DST_OPTIONAL(dst, dst_buf_size);
+
+    uint32_t quotient = src;
+    size_t converted_len = 2;
+
+    while (quotient /= 10) {
+        converted_len++;
+    }
+
+    if (dst == NULL && dst_buf_size == 0) {
+        return converted_len;
+    }
+
+    if (dst_buf_size < converted_len) {
+        errno = ERANGE;
+        return -1;
+    }
+
+    quotient = src;
+    for (size_t i = 0; i < converted_len - 1; i++) {
+        dst[converted_len - i - 2] = quotient % 10 + '0';
+        quotient /= 10;
+    }
+    dst[converted_len - 1] = '\0';
+
+    return converted_len;
 }
