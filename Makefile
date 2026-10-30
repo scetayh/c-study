@@ -19,17 +19,22 @@ UTILS_OBJ = \
 TCPL2_SRC = $(wildcard $(SRC_DIR)/tcpl2/*.c)
 TCPL2_BIN = $(patsubst $(SRC_DIR)/tcpl2/%.c,$(BIN_DIR)/tcpl2/%,$(TCPL2_SRC))
 
+NJUPT_SRC = $(wildcard $(SRC_DIR)/njupt/*.c)
+NJUPT_BIN = $(patsubst $(SRC_DIR)/njupt/%.c,$(BIN_DIR)/njupt/%,$(NJUPT_SRC))
+
 DEP_FILES = $(UTILS_OBJ:.o=.d) $(addsuffix .d,$(TCPL2_BIN))
 
 -include $(DEP_FILES)
 
-.PHONY: all lib tcpl2 clean
+.PHONY: all lib tcpl2 njupt clean
 
-all: $(LIBUTILS) $(TCPL2_BIN)
+all: $(LIBUTILS) $(TCPL2_BIN) $(NJUPT_BIN)
 
 lib: $(LIBUTILS)
 
 tcpl2: $(TCPL2_BIN)
+
+njupt: $(NJUPT_BIN)
 
 
 # ------------------------------------------------------------
@@ -60,6 +65,15 @@ $(BIN_DIR)/tcpl2/%: $(SRC_DIR)/tcpl2/%.c $(LIBUTILS)
 
 
 # ------------------------------------------------------------
+# NJUPT exercises
+# ------------------------------------------------------------
+
+$(BIN_DIR)/njupt/%: $(SRC_DIR)/njupt/%.c $(LIBUTILS)
+	@mkdir -p $(dir $@)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIBUTILS) -o $@
+
+
+# ------------------------------------------------------------
 # Dependencies
 # ------------------------------------------------------------
 
@@ -74,3 +88,4 @@ clean:
 	rm -rf $(OBJ_DIR)
 	rm -rf $(LIB_DIR)
 	rm -rf $(BIN_DIR)/tcpl2
+	rm -rf $(BIN_DIR)/njupt

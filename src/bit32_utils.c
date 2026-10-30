@@ -75,34 +75,91 @@ ssize_t u32_to_bin_str(uint32_t src, char *dst, size_t dst_buf_size) {
     }
     dst[32] = '\0';
 
-    return 32;
+    return (ssize_t)32;
 }
 
-ssize_t u32_to_str(uint32_t src, char *dst, size_t dst_buf_size) {
+ssize_t u32_to_oct_str(uint32_t src, char *dst, size_t dst_buf_size) {
     CHECK_DST_OPTIONAL(dst, dst_buf_size);
 
     uint32_t quotient = src;
-    size_t converted_len = 2;
+    size_t converted_len = 1;
 
-    while (quotient /= 10) {
+    while (quotient /= 8) {
         converted_len++;
     }
 
-    if (dst == NULL && dst_buf_size == 0) {
-        return converted_len;
-    }
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, converted_len);
 
-    if (dst_buf_size < converted_len) {
+    if (dst_buf_size < converted_len + 1) {
         errno = ERANGE;
         return -1;
     }
 
     quotient = src;
-    for (size_t i = 0; i < converted_len - 1; i++) {
-        dst[converted_len - i - 2] = quotient % 10 + '0';
+    size_t i;
+    for (i = 0; i < converted_len; i++) {
+        dst[converted_len - i - 1] = quotient % 8 + '0';
+        quotient /= 8;
+    }
+    dst[i] = '\0';
+
+    return (ssize_t)converted_len;
+}
+
+ssize_t u32_to_dec_str(uint32_t src, char *dst, size_t dst_buf_size) {
+    CHECK_DST_OPTIONAL(dst, dst_buf_size);
+
+    uint32_t quotient = src;
+    size_t converted_len = 1;
+
+    while (quotient /= 10) {
+        converted_len++;
+    }
+
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, converted_len);
+
+    if (dst_buf_size < converted_len + 1) {
+        errno = ERANGE;
+        return -1;
+    }
+
+    quotient = src;
+    size_t i;
+    for (i = 0; i < converted_len; i++) {
+        dst[converted_len - i - 1] = quotient % 10 + '0';
         quotient /= 10;
     }
-    dst[converted_len - 1] = '\0';
+    dst[i] = '\0';
 
-    return converted_len;
+    return (ssize_t)converted_len;
+}
+
+ssize_t u32_to_hex_str(uint32_t src, char *dst, size_t dst_buf_size) {
+    CHECK_DST_OPTIONAL(dst, dst_buf_size);
+
+    uint32_t quotient = src;
+    size_t converted_len = 1;
+
+    while (quotient /= 16) {
+        converted_len++;
+    }
+
+    RETURN_LEN_IF_NO_DST(dst, dst_buf_size, converted_len);
+
+    if (dst_buf_size < converted_len + 1) {
+        errno = ERANGE;
+        return -1;
+    }
+
+    quotient = src;
+    size_t i;
+    for (i = 0; i < converted_len; i++) {
+        uint32_t digit = quotient % 16;
+        dst[converted_len - i - 1] =
+            (digit < 10) ? (char)('0' + digit) : (char)('A' + digit - 10);
+        quotient /= 16;
+    }
+    dst[i] = '\0';
+
+    return (ssize_t)converted_len;
 }

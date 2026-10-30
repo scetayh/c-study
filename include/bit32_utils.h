@@ -194,7 +194,114 @@ int u32_popcount(uint32_t src);
  */
 ssize_t u32_to_bin_str(uint32_t src, char *dst, size_t dst_buf_size);
 
-ssize_t u32_to_str(uint32_t src, char *dst, size_t dst_buf_size);
+/**
+ * @brief 将 uint32_t 转换为八进制字符串，写入目标缓冲区。
+ *
+ * 该函数将无符号 32 位整数 src 转换为八进制表示（无前导零，无 '0' 前缀），
+ * 结果写入 dst，并始终以 '\0' 结尾。返回值表示数字位数（不含 '\0'）。
+ *
+ * @param src           待转换的无符号 32 位整数。
+ * @param dst           目标缓冲区。若为 NULL，则必须同时设置 dst_buf_size = 0，
+ *                      此时函数仅返回所需长度，不进行写入。
+ * @param dst_buf_size  目标缓冲区的物理大小（字节数）。若 dst 非空，则必须
+ *                      至少为“数字位数 + 1”（含 '\0'）。
+ *
+ * @return 成功时返回八进制字符串的长度（不含 '\0'），范围 [1, 11]。
+ * 
+ *         若 dst == NULL 且 dst_buf_size == 0，返回所需长度（不含 '\0'）。
+ * 
+ *         若 dst 非空但 dst_buf_size 不足（< 数字位数 + 1），
+ *         返回 -1 并设置 errno = ERANGE。
+ * 
+ *         若参数无效（dst 非空但 dst_buf_size == 0），
+ *         返回 -1 并设置 errno = EINVAL（由 CHECK_DST_OPTIONAL 处理）。
+ *
+ * @note
+ * - 该函数是纯函数，不修改 src。
+ * 
+ * - 对于 src = 0，输出字符串为 "0"，长度为 1。
+ * 
+ * - 输出不包含八进制前缀 '0'；若需要前缀，调用者需自行添加。
+ * 
+ * - 所需缓冲区大小至少为 12 字节（11 位数字 + '\0'），但函数会精确计算实际所需大小。
+ * 
+ * - 本函数不支持截断：若缓冲区不足，直接返回 -1，不写入任何内容。
+ *
+ * @warning 若 dst 非空，则 dst_buf_size 必须足够容纳完整数字和 '\0'，
+ *          否则函数返回 -1，不会写入任何内容。
+ */
+ssize_t u32_to_oct_str(uint32_t src, char *dst, size_t dst_buf_size);
+
+/**
+ * @brief 将 uint32_t 转换为十进制字符串，写入目标缓冲区。
+ *
+ * 该函数将无符号 32 位整数 src 转换为十进制表示（无前导零），
+ * 结果写入 dst，并始终以 '\0' 结尾。返回值表示数字位数（不含 '\0'）。
+ *
+ * @param src           待转换的无符号 32 位整数。
+ * @param dst           目标缓冲区。若为 NULL，则必须同时设置 dst_buf_size = 0，
+ *                      此时函数仅返回所需长度，不进行写入。
+ * @param dst_buf_size  目标缓冲区的物理大小（字节数）。若 dst 非空，则必须
+ *                      至少为“数字位数 + 1”（含 '\0'）。
+ *
+ * @return 成功时返回十进制字符串的长度（不含 '\0'），范围 [1, 10]。
+ * 
+ *         若 dst == NULL 且 dst_buf_size == 0，返回所需长度（不含 '\0'）。
+ * 
+ *         若 dst 非空但 dst_buf_size 不足（< 数字位数 + 1），
+ *         返回 -1 并设置 errno = ERANGE。
+ * 
+ *         若参数无效（dst 非空但 dst_buf_size == 0），
+ *         返回 -1 并设置 errno = EINVAL（由 CHECK_DST_OPTIONAL 处理）。
+ *
+ * @note
+ * - 该函数是纯函数，不修改 src。
+ * 
+ * - 对于 src = 0，输出字符串为 "0"，长度为 1。
+ * 
+ * - 所需缓冲区大小至少为 11 字节（10 位数字 + '\0'），但函数会精确计算实际所需大小。
+ * 
+ * - 本函数不支持截断：若缓冲区不足，直接返回 -1，不写入任何内容。
+ * 
+ * - 调用者可通过返回值判断是否发生截断（本函数空间不足时不会截断，而是报错）。
+ *
+ * @warning 若 dst 非空，则 dst_buf_size 必须足够容纳完整数字和 '\0'，
+ *          否则函数返回 -1，不会写入任何内容。
+ */
+ssize_t u32_to_dec_str(uint32_t src, char *dst, size_t dst_buf_size);
+
+/**
+ * @brief 将 uint32_t 转换为十六进制字符串（大写），写入目标缓冲区。
+ *
+ * 该函数将无符号 32 位整数 src 转换为十六进制表示（无前导零，无 '0x' 前缀），
+ * 使用大写字母 A~F，结果写入 dst，并始终以 '\0' 结尾。
+ * 返回值表示数字位数（不含 '\0'）。
+ *
+ * @param src           待转换的无符号 32 位整数。
+ * @param dst           目标缓冲区。若为 NULL，则必须同时设置 dst_buf_size = 0，
+ *                      此时函数仅返回所需长度，不进行写入。
+ * @param dst_buf_size  目标缓冲区的物理大小（字节数）。若 dst 非空，则必须
+ *                      至少为“数字位数 + 1”（含 '\0'）。
+ *
+ * @return 成功时返回十六进制字符串的长度（不含 '\0'），范围 [1, 8]。
+ *         若 dst == NULL 且 dst_buf_size == 0，返回所需长度（不含 '\0'）。
+ *         若 dst 非空但 dst_buf_size 不足（< 数字位数 + 1），
+ *         返回 -1 并设置 errno = ERANGE。
+ *         若参数无效（dst 非空但 dst_buf_size == 0），
+ *         返回 -1 并设置 errno = EINVAL（由 CHECK_DST_OPTIONAL 处理）。
+ *
+ * @note
+ * - 该函数是纯函数，不修改 src。
+ * - 对于 src = 0，输出字符串为 "0"，长度为 1。
+ * - 输出使用大写字母 A~F；若需小写，调用者可在返回后自行转换。
+ * - 输出不包含 '0x' 前缀；若需要前缀，调用者需自行添加。
+ * - 所需缓冲区大小至少为 9 字节（8 位数字 + '\0'），但函数会精确计算实际所需大小。
+ * - 本函数不支持截断：若缓冲区不足，直接返回 -1，不写入任何内容。
+ *
+ * @warning 若 dst 非空，则 dst_buf_size 必须足够容纳完整数字和 '\0'，
+ *          否则函数返回 -1，不会写入任何内容。
+ */
+ssize_t u32_to_hex_str(uint32_t src, char *dst, size_t dst_buf_size);
 
 #ifdef __cplusplus
 }
